@@ -1,0 +1,1074 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KEYWAVE 키워드 분석</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0c10; --bg2:#11141b; --card:#161a23; --line:#262b37;
+  --text:#f2f4f8; --muted:#9aa3b2; --accent:#22d3a6; --accent2:#3b82f6;
+  --grad:linear-gradient(90deg,var(--accent),var(--accent2));
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:"Noto Sans KR",system-ui,sans-serif;line-height:1.6}
+a{color:inherit;text-decoration:none}
+button{font:inherit;cursor:pointer;border:0}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+
+
+/* nav */
+nav{position:sticky;top:0;z-index:10;background:rgba(0,0,0,.85);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;align-items:center;height:64px;gap:32px}
+.logo{font-weight:800;font-size:20px;letter-spacing:.5px;display:flex;align-items:center;gap:8px}
+.logo i{width:26px;height:26px;border-radius:50%;background:var(--grad);display:inline-block}
+nav ul{display:flex;gap:28px;list-style:none;font-size:15px;color:#d6dae2}
+nav ul a:hover{color:#fff}
+nav .right{margin-left:auto;font-size:15px}
+
+/* hero */
+.hero{position:relative;padding:110px 0 70px;text-align:center;overflow:hidden}
+.hero::before,.hero::after{content:"";position:absolute;border:1px solid #1f2430;border-radius:50%}
+.hero::before{width:560px;height:560px;left:-180px;top:120px}
+.hero::after{width:380px;height:380px;left:-90px;top:210px}
+.hero h1{font-size:clamp(30px,5vw,50px);line-height:1.3;font-weight:700}
+.hero h1 b{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:800}
+.hero p{color:var(--muted);margin-top:20px;font-size:16px}
+.hero p strong{color:#fff}
+.search{position:relative;z-index:1;margin:40px auto 0;max-width:620px;background:#fff;border-radius:999px;display:flex;align-items:center;padding:6px 8px 6px 24px;box-shadow:0 0 30px rgba(59,130,246,.45)}
+.search select{border:0;background:none;color:#10b981;font-weight:700;font-size:14px;outline:none;cursor:pointer}
+.search input{flex:1;border:0;outline:none;font-size:16px;padding:12px 14px;color:#111;min-width:0}
+.search button{background:var(--grad);color:#fff;width:44px;height:44px;border-radius:50%;font-size:18px}
+.hot{margin-top:28px;position:relative;z-index:1}
+.hot h4{font-size:15px;margin-bottom:12px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.chip{background:#141924;border:1px solid #233150;color:#cfe0ff;padding:6px 14px;border-radius:999px;font-size:14px}
+.chip:hover{border-color:var(--accent2)}
+
+/* result */
+#result{display:none;margin:0 auto 40px;max-width:900px;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:28px}
+#result h3{font-size:22px;margin-bottom:18px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.stat{background:var(--bg2);border-radius:14px;padding:16px}
+.stat span{color:var(--muted);font-size:13px}
+.stat strong{display:block;font-size:22px;margin-top:4px}
+.bars{display:flex;align-items:flex-end;gap:6px;height:140px;margin-top:22px;padding-top:10px}
+.bars div{flex:1;background:var(--grad);border-radius:6px 6px 0 0;position:relative}
+.bars div::after{content:attr(data-m);position:absolute;bottom:-22px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--muted)}
+.related{margin-top:40px}
+.sites{margin-top:36px}
+.sites>h4{margin-bottom:12px;font-size:15px}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+.scol .shead{display:flex;justify-content:space-between;font-weight:700;padding:6px 2px 10px;border-bottom:1px solid var(--line);position:relative}
+.scol .shead::after{content:"";position:absolute;left:0;bottom:-1px;height:2px;width:50%;background:#f97316;border-radius:2px}
+.srow{display:flex;justify-content:space-between;width:100%;background:none;color:var(--muted);padding:8px 2px;font-size:15px;text-align:left;border-radius:6px}
+.srow:hover{color:#fff}
+.srow.on{color:#fff;font-weight:700}
+.srow.on span:first-child::before{content:"▸ ";color:#f97316}
+.srow small{font-size:15px}
+.sbox{margin-top:18px;background:var(--bg2);border-radius:14px;padding:18px}
+.sbox .top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.sbox .top a{color:var(--accent);font-size:14px}
+@media (max-width:760px){.sgrid{grid-template-columns:1fr}}
+/* 키워드 돋보기에서 가져온 기능 */
+.pill{display:inline-block;font-size:13px;font-weight:700;border-radius:999px;padding:3px 10px;margin-left:8px;vertical-align:middle}
+.pill.good{color:#4ade80;background:#14301f}.pill.warn{color:#fbbf24;background:#3a2e14}.pill.bad{color:#f87171;background:#3d1f1c}
+.peak{margin-top:34px;background:var(--bg2);border-radius:12px;padding:12px 16px;font-size:14px;color:var(--muted)}
+.peak b{color:#fbbf24}
+.sortbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:0 0 10px;font-size:13px;color:var(--muted)}
+.sortbar button{background:var(--bg2);color:var(--muted);border:1px solid var(--line);border-radius:8px;padding:4px 10px;font-size:13px}
+.sortbar button.on{color:var(--accent);border-color:var(--accent);font-weight:700}
+.best{margin-left:6px;font-size:11px;color:#fbbf24;background:#3a2e14;padding:1px 6px;border-radius:4px}
+.tagbar{margin-top:24px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;background:var(--bg2);border-radius:14px;padding:14px 18px}
+.tagbar p{color:var(--muted);font-size:14px}
+.tagbar button{background:var(--grad);color:#fff;border-radius:10px;padding:10px 18px;font-weight:700}
+.howto{margin-top:24px;font-size:14px;color:var(--muted);display:grid;gap:4px;border-top:1px solid var(--line);padding-top:16px}
+.howto b{color:var(--text)}
+/* 한눈에 보기 (빅데이터 요약) */
+.ov{margin-top:24px;background:var(--bg2);border:1px solid var(--line);border-radius:18px;padding:22px}
+.ov>h4{font-size:17px;margin-bottom:4px}
+.ov .sub{color:var(--muted);font-size:13px;margin-bottom:16px}
+.ov-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:18px}
+.ov-tile{background:var(--card);border-radius:12px;padding:14px}
+.ov-tile span{color:var(--muted);font-size:12px}
+.ov-tile strong{display:block;font-size:24px;margin-top:2px;font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ov-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+.ov-box{background:var(--card);border-radius:12px;padding:16px;min-width:0}
+.ov-box h5{font-size:14px;margin-bottom:12px}
+.hb{display:grid;grid-template-columns:76px minmax(0,1fr) 34px;align-items:center;gap:8px;font-size:13px;padding:3px 0;border-radius:6px}
+.hb:hover{background:#1d2230}
+.hb .lab{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hb .track{height:12px;background:#222837;border-radius:0 4px 4px 0;overflow:hidden}
+.hb .fill{height:100%;background:var(--accent);border-radius:0 4px 4px 0}
+.hb .val{text-align:right;color:var(--text);font-variant-numeric:tabular-nums}
+.mx-wrap{overflow-x:auto;grid-column:1/-1}
+table.mx{border-collapse:separate;border-spacing:3px;font-size:13px;width:100%;min-width:520px}
+.mx th{color:var(--muted);font-weight:500;font-size:12px;padding:2px 4px}
+.mx td.k{text-align:left;padding-right:10px;white-space:nowrap;cursor:pointer}
+.mx td.k:hover{color:var(--accent)}
+.mx td.c{width:46px;height:22px;border-radius:4px;background:#222837}
+.mx td.c.on{background:var(--accent)}
+.mx td.n{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums;padding-left:6px}
+@media (max-width:760px){.ov-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.ov-grid{grid-template-columns:1fr}}
+#result h3 small{display:block;margin-top:6px;font-weight:400}
+.keynote{display:flex;gap:14px;align-items:flex-start;background:var(--bg2);border:1px dashed var(--line);border-radius:14px;padding:16px 18px;font-size:14px;color:var(--muted)}
+.keynote .ic{font-size:22px;line-height:1}
+.keynote b{color:var(--text)}
+.keynote details{margin-top:8px}
+.keynote summary{cursor:pointer;color:var(--accent)}
+.keynote ol{margin:8px 0 0 18px}
+/* 키워드 확장 */
+.ex-form{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px}
+.ex-form label{display:grid;gap:6px;font-size:13px;color:var(--muted)}
+.ex-form label b{color:var(--text);font-size:14px}
+.ex-form textarea,.ex-form input[type=text]{font:inherit;font-size:15px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg2);color:var(--text);width:100%}
+.ex-form textarea{min-height:118px;resize:vertical}
+.ex-form .full{grid-column:1/-1;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.ex-form button{background:var(--grad);color:#fff;border-radius:10px;padding:12px 22px;font-weight:700}
+.ex-bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin:18px 0 10px;font-size:14px;color:var(--muted)}
+.ex-bar b{color:var(--text)}
+.ex-bar button{background:var(--bg2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:7px 12px;font-size:13px}
+.ex-wrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:14px}
+table.ex{width:100%;border-collapse:collapse;font-size:14px;min-width:620px}
+.ex th,.ex td{padding:9px 12px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.ex th:first-child,.ex td:first-child,.ex th:nth-child(2),.ex td:nth-child(2){text-align:left}
+.ex th{color:var(--muted);font-weight:500;font-size:12px;background:var(--bg2);cursor:pointer}
+.ex td.kwc{cursor:pointer}.ex td.kwc:hover{color:var(--accent)}
+.ex td.src{color:var(--muted);font-size:12px;text-align:left}
+@media (max-width:760px){.ex-form{grid-template-columns:1fr}}
+.nnews{font-size:12px;color:#03c75a;margin-left:6px;white-space:nowrap}
+.nnews:hover{text-decoration:underline}
+/* 트렌드 자세히 보기 */
+.td{margin-top:28px;background:var(--bg2);border:1px solid var(--line);border-radius:18px;padding:20px}
+.td>h4{font-size:17px;margin-bottom:4px}
+.td .sub{color:var(--muted);font-size:13px;margin-bottom:14px}
+.td-ctl{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
+.td-ctl label{display:grid;gap:4px;font-size:12px;color:var(--muted)}
+.td-ctl input,.td-ctl select{font:inherit;font-size:14px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--text);width:100%}
+.td-ages{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:13px;color:var(--muted);margin-bottom:12px}
+.td-ages label{display:flex;gap:4px;align-items:center;cursor:pointer}
+.td button.go{background:var(--grad);color:#fff;border-radius:10px;padding:10px 18px;font-weight:700}
+.td-box{background:var(--card);border-radius:12px;padding:14px;margin-top:14px;position:relative}
+.td-box h5{font-size:14px;margin-bottom:8px}
+.td-legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;margin-bottom:6px}
+.td-legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
+.td svg{width:100%;height:auto;display:block}
+.td-tip{position:absolute;pointer-events:none;background:#0b0e14;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12px;white-space:nowrap;display:none;z-index:5}
+.td details{margin-top:10px;font-size:13px;color:var(--muted)}
+.td details table{border-collapse:collapse;margin-top:8px;font-variant-numeric:tabular-nums}
+.td details td,.td details th{padding:3px 10px;border-bottom:1px solid var(--line);text-align:right}
+.td details th:first-child,.td details td:first-child{text-align:left}
+/* 키워드 확장 고급 필터 */
+.ex-adv{grid-column:1/-1;font-size:13px;color:var(--muted)}
+.ex-adv summary{cursor:pointer;color:var(--accent);font-size:14px}
+.ex-adv .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:10px}
+.ex-adv input,.ex-adv select{font:inherit;font-size:14px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg2);color:var(--text);width:100%}
+.ex-adv .pair{display:flex;gap:6px;align-items:center}
+/* 🤖 AI 인사이트 */
+.ai{margin-top:24px;background:linear-gradient(135deg,#10241f,#111a2e);border:1px solid #1f3b4d;border-radius:18px;padding:22px}
+.ai>h4{font-size:18px;margin-bottom:4px}
+.ai .sub{color:var(--muted);font-size:13px;margin-bottom:14px}
+.ai .go{background:var(--grad);color:#fff;border-radius:12px;padding:12px 20px;font-weight:700;font-size:15px}
+.ai-verdict{display:flex;gap:12px;align-items:flex-start;background:var(--card);border-radius:14px;padding:16px;margin-bottom:14px}
+.ai-verdict .lv{font-weight:800;font-size:15px;padding:4px 12px;border-radius:999px;white-space:nowrap}
+.lv-good{color:#4ade80;background:#14301f}.lv-mid{color:#fbbf24;background:#3a2e14}.lv-bad{color:#f87171;background:#3d1f1c}.lv-none{color:var(--muted);background:#222837}
+.ai-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+.ai-box{background:var(--card);border-radius:14px;padding:16px;min-width:0}
+.ai-box h5{font-size:14px;margin-bottom:10px}
+.ai-box table{width:100%;border-collapse:collapse;font-size:13px}
+.ai-box td{padding:6px 4px;border-bottom:1px solid var(--line);vertical-align:top}
+.ai-box td:first-child{color:var(--text);font-weight:700;white-space:nowrap;padding-right:10px}
+.ai-box td.ev{color:var(--accent)}
+.ai-topics{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;grid-column:1/-1}
+.ai-topic{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:12px;font-size:13px;color:var(--muted)}
+.ai-topic b{display:block;color:var(--text);font-size:14px;margin-bottom:6px}
+.ai-out ol,.ai-out ul{padding-left:18px;font-size:14px}
+.ai-out li{padding:2px 0}
+.ai-foot{margin-top:12px;font-size:12px;color:var(--muted)}
+@media (max-width:760px){.ai-grid{grid-template-columns:1fr}}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:24px;background:var(--text);color:var(--bg);padding:9px 18px;border-radius:999px;font-size:14px;z-index:50}
+.related h4{margin-bottom:10px;font-size:15px}
+
+/* sections */
+section{padding:90px 0}
+.sec-title{text-align:center;margin-bottom:44px}
+.sec-title h2{font-size:clamp(26px,3.5vw,36px);font-weight:800}
+.sec-title p{color:var(--muted);margin-top:12px}
+.alt{background:var(--bg2)}
+
+.steps{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:28px}
+.steps button{background:var(--card);color:var(--muted);padding:12px 22px;border-radius:12px;border:1px solid var(--line);font-weight:500}
+.steps button.on{color:#fff;border-color:var(--accent);background:#10241f}
+.steps button em{font-style:normal;color:var(--accent);margin-right:8px;font-weight:700}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:36px;display:grid;grid-template-columns:1fr 1fr;gap:30px;align-items:center}
+.panel h3{font-size:24px;margin-bottom:12px}
+.panel ul{list-style:none;color:var(--muted)}
+.panel li{padding:6px 0}
+.panel li::before{content:"✓ ";color:var(--accent);font-weight:700}
+.mock{background:var(--bg2);border-radius:14px;min-height:220px;padding:18px}
+.mock h5{font-size:13px;color:var(--muted);font-weight:500;margin-bottom:10px}
+.mock .hb{grid-template-columns:120px minmax(0,1fr) 64px;font-size:14px;padding:5px 0}
+.mock .hb .lab{color:var(--text)}
+.mock .hb .track{height:14px;background:#2a3040}
+.mock .hb .fill{background:var(--accent)}
+.mock ol{padding-left:20px;color:var(--text);font-size:14px}
+.mock ol li{padding:3px 0}
+.mock ol li::before{content:none}
+.vbars{display:flex;align-items:flex-end;gap:6px;height:150px}
+.vbars div{flex:1;background:var(--grad);border-radius:4px 4px 0 0;position:relative;min-height:2px}
+.vbars div span{position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-size:10px;color:var(--muted)}
+.try{background:none;border:1px solid var(--line);color:var(--accent);border-radius:8px;padding:2px 8px;font-size:12px;margin-left:8px;cursor:pointer}
+.try:hover{border-color:var(--accent)}
+.exkw{display:flex;gap:8px;justify-content:center;align-items:center;margin:-12px 0 22px;font-size:14px;color:var(--muted)}
+.exkw input{font:inherit;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--text);width:140px}
+.flash{animation:flash 1.8s ease}
+@keyframes flash{0%,60%{box-shadow:0 0 0 3px var(--accent)}100%{box-shadow:0 0 0 0 transparent}}
+
+.rank{max-width:760px;margin:0 auto;background:var(--card);border:1px solid var(--line);border-radius:20px;overflow:hidden}
+.rank-row{display:grid;grid-template-columns:50px 1fr 120px 90px;align-items:center;padding:14px 22px;border-bottom:1px solid var(--line);font-size:15px}
+.rank-row:last-child{border-bottom:0}
+.rank-row.head{color:var(--muted);font-size:13px;background:var(--bg2)}
+.rank-row .n{font-weight:800;color:var(--accent)}
+.meter{height:6px;border-radius:3px;background:#222837;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--grad)}
+.up{color:#f87171}.down{color:#60a5fa}
+
+.trends{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.tcard.wide{grid-column:1/-1}
+@media (max-width:640px){.trends{grid-template-columns:1fr}}
+.tcard{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px}
+.tcard h4{margin-bottom:12px}
+.tcard ol{padding-left:20px;color:#d6dae2}
+.tcard li{padding:4px 0}
+
+
+
+footer{border-top:1px solid var(--line);padding:50px 0 30px;color:var(--muted);font-size:14px}
+.fgrid{display:grid;grid-template-columns:2fr 1fr;gap:24px}
+.fgrid h5{color:#fff;margin-bottom:10px;font-size:14px}
+.fgrid ul{list-style:none}
+.fgrid li{padding:3px 0}
+.fgrid a:hover{color:#fff}
+.copy{margin-top:36px;font-size:13px}
+
+@media (max-width:760px){
+  nav ul{display:none}
+  .panel{grid-template-columns:1fr;padding:24px}
+  .fgrid{grid-template-columns:1fr 1fr}
+  .rank-row{grid-template-columns:36px 1fr 70px;padding:12px 14px}
+  .rank-row .hide{display:none}
+  }
+</style>
+</head>
+<body>
+
+<nav><div class="wrap">
+  <a href="#" class="logo"><i></i>KEYWAVE</a>
+  <ul>
+    <li><a href="#workflow">모든 서비스</a></li>
+    <li><a href="#expand">키워드 확장</a></li>
+    <li><a href="#ranking">급상승 검색어</a></li>
+    <li><a href="#trend">트렌드</a></li>
+  </ul>
+</div></nav>
+
+<header class="hero"><div class="wrap">
+  <h1>AI가 골라주는 블로그 글감,<br><b>데이터로 확인하세요</b></h1>
+  <p>네이버 <strong>검색량·광고 경쟁·12개월 추이</strong>와 <strong>사이트별 연관 키워드</strong>를 한눈에 보고,<br><strong>🤖 AI 인사이트</strong>로 글로 쓸 <strong>콘텐츠 주제</strong>까지 추천받으세요.</p>
+  <form class="search" onsubmit="analyze(event)">
+    <select id="engine" aria-label="검색 사이트">
+      <option value="검색1">NAVER</option>
+      <option value="검색0">GOOGLE</option>
+      <option value="검색2">DAUM</option>
+      <option value="검색3">ZUM</option>
+      <option value="검색4">BING</option>
+      <option value="검색5">YAHOO</option>
+      <option value="SNS4">YOUTUBE</option>
+    </select>
+    <input id="kw" placeholder="분석할 키워드를 입력하세요" autocomplete="off">
+    <button aria-label="검색">⌕</button>
+  </form>
+  <div class="hot">
+    <h4>🔥 인기 급상승 키워드</h4>
+    <div class="chips" id="hotChips"></div>
+  </div>
+</div></header>
+
+<div class="wrap"><div id="result"></div></div>
+
+<section id="expand"><div class="wrap">
+  <div class="sec-title"><h2>키워드 확장 🔎</h2><p>시드 키워드를 넣으면 네이버 검색광고 연관 키워드와 7개 사이트 자동완성 키워드를 모두 모아요.</p></div>
+  <form class="ex-form" id="exForm" autocomplete="off">
+    <label><b>시드 키워드</b> 한 줄에 하나씩, 최대 5개
+      <textarea id="exSeeds" placeholder="다이어트&#10;다이어트 식단&#10;직장인 다이어트"></textarea></label>
+    <div style="display:grid;gap:14px;align-content:start">
+      <label><b>포함할 단어</b> 쉼표로 구분, 최대 5개 — 이 단어가 들어간 키워드만 남겨요
+        <input type="text" id="exInc" placeholder="추천, 가격, 후기"></label>
+      <label><b>제외할 단어</b> 쉼표로 구분, 최대 5개 — 이 단어가 들어간 키워드는 빼요
+        <input type="text" id="exExc" placeholder="중고, 무료"></label>
+    </div>
+    <details class="ex-adv" id="exAdv"><summary>고급 필터 (검색량 · 광고 경쟁 · 모바일 비율 · 광고 클릭률)</summary>
+      <div class="grid">
+        <label>월간 검색량 합계<span class="pair"><input type="number" id="fVolMin" placeholder="최소" min="0"> ~ <input type="number" id="fVolMax" placeholder="최대" min="0"></span></label>
+        <label>광고 경쟁<select id="fComp"><option value="">전체</option><option>낮음</option><option>중간</option><option>높음</option></select></label>
+        <label>모바일 검색 비율 (%) 이상<input type="number" id="fMob" placeholder="예: 70" min="0" max="100"></label>
+        <label>광고 평균 클릭률 (%) 이상<input type="number" id="fCtr" placeholder="예: 1.5" min="0" step="0.1"></label>
+      </div>
+      <p style="margin-top:8px">검색량이 없는 자동완성 키워드는 고급 필터를 쓰면 빠져요. "&lt;10"(10 미만)이 섞인 키워드는 <b>확실히 조건에 맞을 때만</b> 남겨요. 광고 클릭률은 네이버 검색광고가 주는 PC·모바일 평균값이에요.</p>
+    </details>
+    <div class="full">
+      <button id="exGo">키워드 확장 시작</button>
+      <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="exVolOnly"> 검색량 있는 것만</label>
+    </div>
+  </form>
+  <div id="exOut"></div>
+  <div class="ai" id="exAI" style="display:none">
+    <h4>🤖 AI로 키워드 고르기</h4>
+    <p class="sub">지금 표에 보이는 순서대로 <b>위쪽 최대 80개</b>(검색량·광고 경쟁·블로그 글 수·글÷검색량)를 AI에게 보내, 쓸 만한 키워드를 순위로 골라 받아요. 필터·정렬을 먼저 해 두면 더 좋아요.</p>
+    <select id="exAIProv" style="font:inherit;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);margin-right:6px"></select>
+    <button class="go" id="exAIGo">AI로 키워드 고르기</button> <span class="sub" id="exAINote"></span>
+    <div id="exAIOut"></div>
+  </div>
+</div></section>
+
+<section id="workflow" class="alt"><div class="wrap">
+  <div class="sec-title"><h2>이렇게 활용해보세요.</h2><p>KEYWAVE에서 실제로 쓸 수 있는 기능을 순서대로 정리했어요.</p></div>
+  <div class="steps" id="steps"></div>
+  <div class="exkw">예시 키워드 <input id="exKw" value="캠핑"> 로 각 기능을 직접 해볼 수 있어요. <b>▶ 해보기</b>를 눌러 보세요.</div>
+  <div class="panel" id="panel"></div>
+</div></section>
+
+<section id="ranking"><div class="wrap">
+  <div class="sec-title"><h2>지금 뜨는 검색어 🔥</h2><p id="trendNote">지금 한국에서 검색이 급증한 키워드와 관련 뉴스입니다.</p></div>
+  <div class="rank" id="rank"></div>
+</div></section>
+
+<section id="trend" class="alt"><div class="wrap">
+  <div class="sec-title"><h2>트렌드 🔥</h2><p>지금 한국에서 검색이 급증한 키워드와 관련 뉴스를 한눈에 확인하세요.</p></div>
+  <div class="trends" id="trends"></div>
+</div></section>
+
+<footer><div class="wrap">
+  <div class="fgrid">
+    <div><a href="#" class="logo"><i></i>KEYWAVE</a><p style="margin-top:12px">사이트별 연관 키워드와<br>실시간 급상승 검색어를 한곳에서</p></div>
+    <div><h5>바로가기</h5><ul><li><a href="#workflow">활용 방법</a></li><li><a href="#ranking">급상승 검색어</a></li><li><a href="#trend">트렌드</a></li></ul></div>
+  </div>
+  <p class="copy">© 2026 KEYWAVE. All Rights Reserved.</p>
+</div></footer>
+
+<script>
+hotChips.innerHTML=`<span style="color:var(--muted);font-size:14px">불러오는 중…</span>`;
+
+const fmt=n=>typeof n==="number"?n.toLocaleString("ko-KR"):String(n);
+const num=v=>typeof v==="number"?v:0;          // "<10" 같은 값은 계산에서 0으로
+const exact=(...v)=>v.every(x=>typeof x==="number"); // 모두 정확한 숫자인지
+
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+let analyzeSeq=0; // 연달아 검색할 때 늦게 도착한 예전 결과가 화면을 덮지 않도록 번호를 붙입니다
+async function analyze(e){
+  e&&e.preventDefault();
+  const k=kw.value.trim(); if(!k){kw.focus();return}
+  const seq=++analyzeSeq;
+  result.style.display="block";
+  result.innerHTML=`<h3>“${esc(k)}” 분석 중…</h3>`;
+  result.scrollIntoView({behavior:"smooth",block:"start"});
+  let d;
+  try{
+    const res=await fetch(`/api/analyze?q=${encodeURIComponent(k)}`);
+    d=await res.json();
+    if(seq!==analyzeSeq) return;
+    if(!res.ok) throw new Error(d.error||res.status);
+  }catch(err){
+    if(seq!==analyzeSeq) return;
+    result.innerHTML=`<h3>분석 실패</h3><p style="color:#f87171">${esc(err.message)}</p>`;
+    return;
+  }
+  // 값이 없으면(키 없음) 숫자를 지어내지 않고 "키 필요"로 표시합니다
+  const need=`<span style="font-size:14px;color:var(--muted);font-weight:400">키 필요</span>`;
+  const show=v=>v==null?need:fmt(v);
+  // 검색량이 둘 다 정확한 숫자일 때만 합계·비율·추정치를 계산합니다
+  const total=exact(d.pc,d.mobile)?d.pc+d.mobile:null;
+  const ratio=total&&d.docs!=null?(d.docs/total).toFixed(2):null;
+  const last=d.trend.at(-1)?.ratio||1, max=Math.max(...d.trend.map(t=>t.ratio),1);
+  const tag=d.mode==="live"?"NAVER 실제 데이터":"";
+  result.innerHTML=`<h3>“${esc(d.keyword)}” 분석 결과 <small style="color:var(--muted);font-size:14px">${tag}</small></h3>
+  <div class="stats">
+    <div class="stat"><span>월간 검색량 (PC)</span><strong>${show(d.pc)}</strong></div>
+    <div class="stat"><span>월간 검색량 (모바일)</span><strong>${show(d.mobile)}</strong></div>
+    <div class="stat"><span>블로그 누적 발행량</span><strong>${show(d.docs)}</strong></div>
+    <div class="stat"><span>광고 경쟁 / 문서 비율</span><strong>${d.comp==null?need:esc(d.comp)+(ratio?" · "+ratio:"")}</strong></div>
+  </div>
+  ${d.trend.length?`<div class="bars">${d.trend.map(t=>`<div style="height:${t.ratio/max*100}%" data-m="${+t.period.slice(5)}월" title="${t.period} ${total?`약 ${fmt(Math.round(total*t.ratio/last))}회 — 추정치: 최근 한 달 검색량(검색광고)을 데이터랩 비율로 환산한 값이라 실제와 다를 수 있어요`:`상대지수 ${t.ratio}`}"></div>`).join("")}</div>`:""}
+  ${d.related_info&&!d.related.length?`<div class="related"><h4>연관 키워드</h4><p style="color:var(--muted);font-size:14px">${d.related_info.total?`네이버 검색광고 연관 키워드 ${fmt(d.related_info.total)}개 중 “${esc(d.keyword)}”이(가) 들어간 키워드가 없어요.`:`네이버 검색광고가 “${esc(d.keyword)}”의 연관 키워드를 주지 않았어요.`}</p></div>`:""}
+  ${d.related.length?`<div class="related"><h4>연관 키워드 <small style="color:var(--muted);font-size:13px;font-weight:400">“${esc(d.keyword)}”이(가) 들어간 것만 · 검색량 순 · 네이버 검색광고 ${fmt(d.related_info.total)}개 중 ${fmt(d.related_info.matched)}개, 위 ${d.related_info.shown}개 표시</small></h4>
+    <div class="rank" style="max-width:none">
+      <div class="rank-row head"><span>#</span><span>키워드</span><span class="hide">PC / 모바일</span><span>광고 경쟁</span></div>
+      ${d.related.map((x,i)=>`<div class="rank-row" style="cursor:pointer" data-k="${esc(x.keyword)}"><span class="n">${i+1}</span><span>${esc(x.keyword)}</span><span class="hide">${fmt(x.pc)} / ${fmt(x.mobile)}</span><span>${esc(x.comp)}</span></div>`).join("")}
+    </div></div>`:""}
+  <div class="sites" id="sites"><h4>사이트별 연관 키워드</h4><p style="color:var(--muted)">사이트별 자동완성 키워드를 불러오는 중…</p></div>`;
+  result.querySelectorAll("[data-k]").forEach(r=>r.onclick=()=>{kw.value=r.dataset.k;analyze()});
+  if(d.errors?.length) result.querySelector("h3").insertAdjacentHTML("afterend",
+    `<p style="color:#fbbf24;font-size:13px;margin:-8px 0 14px">⚠️ 일부 데이터를 못 가져왔어요: ${d.errors.map(esc).join(" · ")}</p>`);
+  loadSites(d.keyword);
+  enhanceResult(d);
+}
+
+/* ---------- 키워드 돋보기에서 가져온 기능 (기존 화면은 그대로 두고 덧붙이기만 함) ---------- */
+const COMP_RANK={"낮음":1,"중간":2,"높음":3};
+let relSort={key:"vol",dir:-1};
+
+function enhanceResult(d){
+  // 1) 경쟁 배지: 네이버 검색광고의 실제 경쟁 정도로 표시 (키 없으면 표시 안 함)
+  const cls={"낮음":"good","중간":"warn","높음":"bad"}[d.comp];
+  if(cls) result.querySelector("h3").insertAdjacentHTML("beforeend",`<span class="pill ${cls}">광고 경쟁 ${esc(d.comp)}</span>`);
+
+  // 2) 가장 많이 찾은 달 + 조언 (12개월 그래프가 있을 때만)
+  const bars=result.querySelector(".bars");
+  if(bars&&d.trend.length){
+    const top=d.trend.reduce((a,b)=>b.ratio>a.ratio?b:a);
+    bars.insertAdjacentHTML("afterend",`<div class="peak">📈 최근 12개월 중 가장 많이 찾은 달은 <b>${+top.period.slice(5)}월</b>이에요. <small>(네이버 데이터랩 상대지수 기준)</small>${seasonInfo(d.trend)}</div>`);
+  }
+
+  // 3) 연관 키워드 표 정렬 + 4) 추천 표시 (검색광고 키가 있어 표가 있을 때만)
+  const table=result.querySelector(".related .rank");
+  if(table&&d.related.length){
+    const byKw=Object.fromEntries(d.related.map(x=>[x.keyword,{...x,vol:num(x.pc)+num(x.mobile)}]));
+    // 추천: 경쟁이 '높음'이 아닌 것 중, 검색량 ÷ 경쟁 점수가 가장 큰 2개
+    const best=Object.values(byKw).filter(x=>x.comp!=="높음"&&x.vol>0)
+      .sort((a,b)=>b.vol/(COMP_RANK[b.comp]||2)-a.vol/(COMP_RANK[a.comp]||2)).slice(0,2).map(x=>x.keyword);
+    table.querySelectorAll("[data-k]").forEach(row=>{
+      if(best.includes(row.dataset.k)) row.children[1].insertAdjacentHTML("beforeend",`<span class="best">⭐추천</span>`);
+    });
+    const keys=[["vol","검색량"],["pc","PC"],["mobile","모바일"],["comp","광고 경쟁"],["keyword","가나다"]];
+    table.insertAdjacentHTML("beforebegin",`<div class="sortbar">정렬: ${keys.map(([k,l])=>`<button data-sort="${k}">${l}</button>`).join("")}</div>`);
+    const bar=table.previousElementSibling;
+    const apply=()=>{
+      const val=(x,k)=>k==="comp"?(COMP_RANK[x.comp]||0):k==="keyword"?x[k]:num(x[k]);
+      [...table.querySelectorAll("[data-k]")]
+        .sort((a,b)=>{const x=byKw[a.dataset.k],y=byKw[b.dataset.k];return (val(x,relSort.key)>val(y,relSort.key)?1:-1)*relSort.dir})
+        .forEach((row,i)=>{row.querySelector(".n").textContent=i+1;table.appendChild(row)});
+      bar.querySelectorAll("button").forEach(b=>{
+        const on=b.dataset.sort===relSort.key;
+        b.classList.toggle("on",on);
+        b.textContent=keys.find(k=>k[0]===b.dataset.sort)[1]+(on?(relSort.dir<0?" ▼":" ▲"):"");
+      });
+    };
+    bar.querySelectorAll("button").forEach(b=>b.onclick=()=>{
+      const k=b.dataset.sort;
+      relSort={key:k,dir:relSort.key===k?-relSort.dir:(k==="keyword"?1:-1)};
+      apply();
+    });
+    apply();
+  }
+
+  // 한눈에 보기 자리 (검색량 칸 바로 아래)
+  const stats=result.querySelector(".stats");
+  stats.insertAdjacentHTML("afterend",`<div class="ov" id="overview"><h4>📊 한눈에 보기</h4><p class="sub">여러 사이트의 연관 키워드를 모아 분석하는 중…</p></div>`);
+
+  // 값이 없는("키 필요") 칸은 숨기고, 모두 비면 안내 한 줄로 바꿉니다
+  const empty=[d.pc,d.mobile,d.docs,d.comp].map(v=>v==null);
+  [...stats.children].forEach((c,i)=>{if(empty[i]) c.remove()});
+  if(!stats.children.length){
+    stats.outerHTML=`<div class="keynote"><span class="ic">🔑</span><div>
+      <b>월간 검색량·발행량·경쟁 정도</b>는 네이버가 열쇠(API 키)를 가진 사람에게만 알려줘요.<br>
+      열쇠가 없어도 아래 <b>📊 한눈에 보기</b>와 <b>사이트별 연관 키워드</b>는 실제 데이터로 볼 수 있어요.
+      <details><summary>열쇠 넣는 법 보기</summary><ol>
+        <li>searchad.naver.com → 도구 → API 사용 관리에서 열쇠 3개 받기</li>
+        <li><a href="/setup.html" style="color:var(--accent)"><b>🔑 열쇠 넣기 화면</b></a>에서 복사한 열쇠를 붙여넣고 저장</li>
+        <li>다시 검색하면 이 자리에 실제 숫자가 나와요</li>
+      </ol></details></div></div>`;
+  }
+
+  // 키워드 확장으로 바로 보내기
+  result.querySelector("h3").insertAdjacentHTML("beforeend",` <button id="toExpand" style="margin-left:8px;font-size:13px;background:var(--bg2);color:var(--accent);border:1px solid var(--line);border-radius:8px;padding:4px 10px;vertical-align:middle">🔎 이 키워드 확장하기</button>`);
+  toExpand.insertAdjacentHTML("afterend",` <a class="nnews" style="font-size:13px" href="${naverNews(d.keyword)}" target="_blank" rel="noopener">📰 네이버 뉴스↗</a>`);
+  toExpand.onclick=()=>{exSeeds.value=d.keyword;runExpand();document.getElementById("expand").scrollIntoView({behavior:"smooth"})};
+
+  // 🤖 AI 인사이트 (버튼을 눌러야 실행 — 쓸 때마다 비용이 들어서 자동으로 돌리지 않아요)
+  document.getElementById("overview").insertAdjacentHTML("afterend",`<div class="ai" id="ai"><h4>🤖 AI 인사이트 — 이 키워드, 글로 쓸 가치가 있을까요?</h4>
+    <p class="sub">KEYWAVE가 모은 <b>실제 데이터</b>(검색량·광고 경쟁·12개월 추이·연관/자동완성 키워드)를 AI(Google Gemini 또는 Claude)에게 보내 판단과 글 주제를 받아요. AI는 이 데이터 안에서만 판단하도록 했어요.</p>
+    <select id="aiProv" style="display:none;font:inherit;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);margin-right:6px"></select>
+    <button class="go" id="aiGo">AI 인사이트 생성하기</button> <span class="sub" id="aiCost"></span>
+    <div id="aiOut"></div></div>`);
+  bindAI(d.keyword);
+
+  // 트렌드 자세히 보기 (기간·비교 키워드·성별·연령·기기 + 요일별)
+  const anchor=result.querySelector(".peak")||result.querySelector(".bars")||document.getElementById("overview");
+  anchor.insertAdjacentHTML("afterend",trendPanelHTML(d.keyword));
+  bindTrendPanel(d.keyword);
+
+  // 5) 태그로 복사 + 6) 읽는 법
+  result.insertAdjacentHTML("beforeend",`
+    <div class="tagbar"><p>분석한 키워드와 연관 키워드를 <b>#해시태그</b>로 한 번에 복사해요.</p><button id="copyTags">#태그로 복사</button></div>
+    <div class="howto">
+      <div><b>읽는 법</b> — 검색량은 “사람들이 얼마나 찾나”, 발행량은 “글이 얼마나 많나”예요.</div>
+      <div><b>광고 경쟁</b>은 이 키워드로 <b>광고하려는 사람이 얼마나 많은지</b>를 네이버 검색광고가 알려주는 값이에요. 블로그 글이 위에 잘 보일지와는 다를 수 있어요.</div>
+      <div><b>⭐추천</b>은 연관 키워드 중 <b>검색량은 많고 광고 경쟁은 덜한</b> 것을 KEYWAVE가 계산해서 고른 거예요.</div>
+    </div>`);
+  copyTags.onclick=()=>copyTagsFor(d);
+}
+
+// 시즌 지표: 12개월 그래프(데이터랩 상대지수)로 계산합니다
+//  - 검색량 배수 = 가장 많은 달 ÷ 12개월 평균
+//  - 집중 시기  = 평균보다 20% 이상 높은 달 (기준을 화면에 함께 적습니다)
+function seasonInfo(trend){
+  if(trend.length<6) return "";
+  const avg=trend.reduce((a,t)=>a+t.ratio,0)/trend.length;
+  const top=Math.max(...trend.map(t=>t.ratio));
+  const hot=trend.filter(t=>t.ratio>=avg*1.2).map(t=>`${+t.period.slice(5)}월`);
+  const mult=(top/avg).toFixed(1);
+  return `<br>📊 <b>검색량 배수 ${mult}배</b> <small>(가장 많은 달 ÷ 12개월 평균)</small>
+    · <b>집중 시기 ${hot.length?hot.join(", "):"없음 (고르게 검색돼요)"}</b> <small>(평균보다 20% 이상 높은 달)</small>`;
+}
+
+// 태그 목록: 검색광고 연관 키워드가 있으면 그걸, 없으면 고른 사이트의 자동완성 키워드를 씁니다
+function tagWords(d){
+  if(d.related.length) return d.related.map(x=>x.keyword);
+  const [group,idx]=[siteSel.replace(/\d+$/,""),+siteSel.match(/\d+$/)[0]];
+  const id=SITES[group]?.[idx]?.[1];
+  return (id&&siteData[id])||siteData.naver||[];
+}
+
+function copyTagsFor(d){
+  const tags=[...new Set([d.keyword,...tagWords(d)].map(w=>"#"+w.replace(/\s/g,"")))].slice(0,30);
+  const text=tags.join(" "), words=tags;
+  const fallback=()=>{
+    const ta=document.createElement("textarea");ta.value=text;document.body.appendChild(ta);ta.select();
+    try{document.execCommand("copy");toast(`태그 ${words.length}개를 복사했어요`)}catch{toast("복사가 안 돼요. 직접 선택해 주세요")}
+    ta.remove();
+  };
+  try{navigator.clipboard.writeText(text).then(()=>toast(`태그 ${words.length}개를 복사했어요`),fallback)}catch{fallback()}
+}
+
+/* ---------- 📊 한눈에 보기: 7개 사이트 자동완성 키워드를 모아 비교 (모두 실제 데이터) ---------- */
+const OV_SITES=[["naver","네이버"],["google","구글"],["daum","다음"],["bing","빙"],["yahoo","야후"],["youtube","유튜브"],["etc","DuckDuckGo"]];
+const norm=w=>w.replace(/\s+/g,"").toLowerCase();
+
+function renderOverview(k){
+  const box=document.getElementById("overview"); if(!box) return;
+  const ok=OV_SITES.filter(([id])=>Array.isArray(siteData[id]));
+  if(!ok.length){box.querySelector(".sub").textContent="사이트별 키워드를 불러오지 못했어요.";return}
+
+  // 키워드별로 어느 사이트에 나왔는지 모으기 (띄어쓰기·대소문자 무시)
+  const map=new Map();
+  for(const [id] of ok) for(const w of siteData[id]){
+    const key=norm(w); if(key===norm(k)) continue;
+    const e=map.get(key)||{word:w,sites:new Set()}; e.sites.add(id); map.set(key,e);
+  }
+  const all=[...map.values()].sort((a,b)=>b.sites.size-a.sites.size||a.word.localeCompare(b.word,"ko"));
+  const common=all.filter(e=>e.sites.size>=2);
+
+  // 자주 붙는 단어: 연관 키워드에서 분석 키워드를 빼고 남은 단어를 셉니다
+  const kws=[k,k.replace(/\s+/g,"")].filter(Boolean);
+  const words=new Map();
+  for(const e of all){
+    let rest=e.word; kws.forEach(x=>rest=rest.split(x).join(" "));
+    for(const t of rest.split(/\s+/)) if(t.length>=2) words.set(t,(words.get(t)||0)+e.sites.size);
+  }
+  const topWords=[...words].sort((a,b)=>b[1]-a[1]).slice(0,8);
+
+  const bars=(rows,max,tip)=>rows.map(([lab,v])=>`<div class="hb" title="${esc(tip(lab,v))}"><span class="lab">${esc(lab)}</span><span class="track"><span class="fill" style="display:block;width:${max?v/max*100:0}%"></span></span><span class="val">${v}</span></div>`).join("");
+  const siteRows=ok.map(([id,name])=>[name,siteData[id].length]).sort((a,b)=>b[1]-a[1]);
+  const top=all.slice(0,12);
+
+  box.innerHTML=`<h4>📊 한눈에 보기</h4>
+    <p class="sub">${ok.length}개 사이트의 자동완성 키워드를 모아 비교했어요. (실제 데이터)</p>
+    <div class="ov-tiles">
+      <div class="ov-tile"><span>응답한 사이트</span><strong>${ok.length} / ${OV_SITES.length}</strong></div>
+      <div class="ov-tile"><span>모은 연관 키워드 (중복 제거)</span><strong>${all.length}</strong></div>
+      <div class="ov-tile"><span>2곳 이상 공통 키워드</span><strong>${common.length}</strong></div>
+      <div class="ov-tile"><span>가장 많이 겹친 키워드</span><strong title="${esc(common[0]?.word||"")}">${common[0]?`${esc(common[0].word)} <small style="font-size:13px;color:var(--muted)">${common[0].sites.size}곳</small>`:"-"}</strong></div>
+    </div>
+    <div class="ov-grid">
+      <div class="ov-box"><h5>사이트별 연관 키워드 수</h5>${bars(siteRows,Math.max(...siteRows.map(r=>r[1]),1),(l,v)=>`${l}: 연관 키워드 ${v}개`)}</div>
+      <div class="ov-box"><h5>자주 붙는 단어</h5>${topWords.length?bars(topWords,topWords[0][1],(l,v)=>`"${l}" — ${v}번 등장`):`<p style="color:var(--muted);font-size:13px">자주 붙는 단어가 없어요.</p>`}</div>
+      <div class="ov-box mx-wrap"><h5>키워드 × 사이트 지도 <small style="color:var(--muted);font-weight:400">— 칠해진 칸 = 그 사이트에 나온 키워드 · 키워드를 누르면 다시 분석</small></h5>
+        <table class="mx"><thead><tr><th style="text-align:left">키워드</th>${ok.map(([,n])=>`<th>${n}</th>`).join("")}<th>합계</th></tr></thead>
+        <tbody>${top.map(e=>`<tr><td class="k" data-w="${esc(e.word)}">${esc(e.word)}</td>${ok.map(([id,n])=>`<td class="c ${e.sites.has(id)?"on":""}" title="${esc(e.word)} · ${n}: ${e.sites.has(id)?"있음":"없음"}"></td>`).join("")}<td class="n">${e.sites.size}</td></tr>`).join("")}</tbody></table>
+      </div>
+    </div>`;
+  box.querySelectorAll("[data-w]").forEach(td=>td.onclick=()=>{kw.value=td.dataset.w;analyze()});
+}
+
+const naverNews=k=>`https://search.naver.com/search.naver?where=news&query=${encodeURIComponent(k)}`;
+
+/* ---------- 🔎 키워드 확장: 검색광고 연관 키워드 + 자동완성, 포함/제외 필터, CSV ---------- */
+const SRC_NAME={"검색광고":"검색광고","naver":"네이버","google":"구글","daum":"다음","bing":"빙","yahoo":"야후","youtube":"유튜브","etc":"DuckDuckGo"};
+let exData=null, exSort={key:"total",dir:-1};
+const exDocs={}, exDocsPending=new Set(); // 키워드별 블로그 누적 글 수 (화면 위 30개만 자동으로 가져옴)
+const DOCS_AUTO=30;
+const ratioOf=x=>{const d=exDocs[x.keyword], t=num(x.pc)+num(x.mobile); return typeof d==="number"&&t?d/t:null;};
+const words5=v=>v.split(",").map(x=>x.trim()).filter(Boolean).slice(0,5);
+const avgCtr=x=>{const c=x.ctr||{}, v=[c.pc,c.mobile].filter(n=>typeof n==="number");return v.length?v.reduce((a,b)=>a+b,0)/v.length:0};
+const totalOf=x=>exact(x.pc,x.mobile)?x.pc+x.mobile:(x.pc==null?null:num(x.pc)+num(x.mobile));
+
+async function runExpand(){
+  const seeds=exSeeds.value.split("\n").map(x=>x.trim()).filter(Boolean);
+  if(!seeds.length){exSeeds.focus();return}
+  if(seeds.length>5) toast("시드 키워드는 5개까지만 써요");
+  exOut.innerHTML=`<p class="ex-bar">키워드를 모으는 중… (사이트 7곳 + 네이버 검색광고)</p>`;
+  try{
+    const res=await fetch(`/api/expand?q=${encodeURIComponent(seeds.slice(0,5).join("\n"))}`);
+    exData=await res.json(); if(!res.ok) throw new Error(exData.error);
+  }catch(err){exOut.innerHTML=`<p style="color:#f87171">확장 실패: ${esc(err.message)}</p>`;return}
+  renderExpand();
+  setupExpandAI();
+}
+
+function filteredExpand(){
+  const inc=words5(exInc.value).map(norm), exc=words5(exExc.value).map(norm);
+  let excluded=0;
+  const rows=exData.items.filter(x=>{
+    const k=norm(x.keyword);
+    if(inc.length&&!inc.some(w=>k.includes(w))) return false;
+    if(exc.some(w=>k.includes(w))){excluded++;return false}
+    if(exVolOnly.checked&&x.pc==null) return false;
+    // 고급 필터 (하나라도 쓰면 검색량 없는 키워드는 제외)
+    const vMin=+fVolMin.value||0, vMax=+fVolMax.value||Infinity, mob=+fMob.value||0, ctr=+fCtr.value||0;
+    if(fVolMin.value||fVolMax.value||fComp.value||fMob.value||fCtr.value){
+      if(x.pc==null) return false;
+      // "<10"은 0~9 사이라 정확한 값을 몰라요. 그래서 '확실히' 조건에 맞는 것만 남깁니다.
+      const hiOf=v=>typeof v==="number"?v:9;            // 가장 클 때
+      const lo=num(x.pc)+num(x.mobile), hi=hiOf(x.pc)+hiOf(x.mobile);
+      if(lo<vMin||hi>vMax) return false;
+      if(fComp.value&&x.comp!==fComp.value) return false;
+      const mobShareMin=num(x.mobile)/((num(x.mobile)+hiOf(x.pc))||1)*100; // 모바일 비율이 가장 낮을 때
+      if(mob&&mobShareMin<mob) return false;
+      if(ctr&&avgCtr(x)<ctr) return false;
+    }
+    return true;
+  }).map(x=>({...x,total:totalOf(x)}));
+  const val=(x,k)=>k==="keyword"?x.keyword:k==="comp"?(COMP_RANK[x.comp]||0):k==="total"?(x.total??-1):k==="ctr"?(x.ctr?avgCtr(x):-1):k==="docs"?(typeof exDocs[x.keyword]==="number"?exDocs[x.keyword]:Infinity*exSort.dir):k==="ratio"?(ratioOf(x)??Infinity*exSort.dir):(x[k]==null?-1:num(x[k]));
+  rows.sort((a,b)=>(val(a,exSort.key)>val(b,exSort.key)?1:val(a,exSort.key)<val(b,exSort.key)?-1:0)*exSort.dir);
+  return {rows,excluded};
+}
+
+function renderExpand(){
+  if(!exData) return;
+  const {rows,excluded}=filteredExpand(), SHOW=300;
+  const cols=[["keyword","키워드"],["sources","출처"],["pc","PC"],["mobile","모바일"],["total","합계"],["comp","광고 경쟁"],["docs","블로그 글"],["ratio","글÷검색량"],["ctr","광고 클릭률 PC/모바일"]];
+  exOut.innerHTML=`
+    ${exData.errors.length?`<p style="color:#fbbf24;font-size:13px;margin-top:14px">⚠️ ${exData.errors.map(esc).join(" · ")}</p>`:""}
+    <div class="ex-bar"><span>확장 결과 <b>${fmt(rows.length)}개</b> · 제외된 키워드 <b>${fmt(excluded)}개</b> · 전체 ${fmt(exData.items.length)}개 (시드: ${exData.seeds.map(esc).join(", ")})</span>
+      <span><button id="exCopy">키워드 전체 복사</button> <button id="exCsv">CSV 다운로드</button></span></div>
+    <div class="ex-wrap"><table class="ex"><thead><tr>${cols.map(([k,l])=>`<th data-k="${k}">${l}${exSort.key===k?(exSort.dir<0?" ▼":" ▲"):""}</th>`).join("")}</tr></thead>
+    <tbody>${rows.slice(0,SHOW).map(x=>`<tr><td class="kwc" data-w="${esc(x.keyword)}">${esc(x.keyword)}</td><td class="src">${x.sources.map(s=>SRC_NAME[s]||s).join(", ")}</td>
+      <td>${x.pc==null?"-":fmt(x.pc)}</td><td>${x.mobile==null?"-":fmt(x.mobile)}</td><td>${x.total==null?"-":fmt(x.total)+(exact(x.pc,x.mobile)?"":"+")}</td><td>${x.comp?esc(x.comp):"-"}</td><td>${docsCell(x)}</td><td>${ratioCell(x)}</td><td>${x.ctr?`${x.ctr.pc??"-"}% / ${x.ctr.mobile??"-"}%`:"-"}</td></tr>`).join("")}</tbody></table></div>
+    ${rows.length>SHOW?`<p class="ex-bar"><span>화면에는 ${SHOW}개까지만 보여요. 나머지 ${fmt(rows.length-SHOW)}개도 <b>키워드 전체 복사</b>와 <b>CSV 다운로드</b>에는 모두 들어가요.</span></p>`:""}
+    <p class="ex-bar"><span><b>블로그 글</b>은 표 <b>위쪽 ${DOCS_AUTO}개</b>만 자동으로 불러와요 (무료 한도 아끼기). 정렬·필터를 바꾸면 새로 위에 온 키워드도 불러와요. <b>글÷검색량</b>이 낮을수록 검색에 비해 글이 적어요.</span></p>
+    <p class="ex-bar">"-"는 검색량이 없는 자동완성 키워드예요. 합계 뒤 "+"는 "&lt;10"이 섞여 있어 실제보다 조금 많을 수 있다는 뜻이에요.</p>`;
+  fetchDocsFor(rows.slice(0,DOCS_AUTO));
+  exOut.querySelectorAll("th[data-k]").forEach(th=>th.onclick=()=>{const k=th.dataset.k; if(k==="sources")return; exSort={key:k,dir:exSort.key===k?-exSort.dir:(k==="keyword"?1:-1)}; renderExpand()});
+  exOut.querySelectorAll("[data-w]").forEach(td=>td.onclick=()=>{kw.value=td.dataset.w;analyze()});
+  exCopy.onclick=()=>{const t=rows.map(x=>x.keyword).join("\n");(navigator.clipboard?.writeText(t)||Promise.reject()).then(()=>toast(`키워드 ${rows.length}개를 복사했어요`),()=>toast("복사가 안 돼요"))};
+  exCsv.onclick=()=>{
+    const q=v=>`"${String(v??"").replace(/"/g,'""')}"`;
+    const lines=[["키워드","출처","PC","모바일","합계","광고 경쟁","블로그 누적 글","글÷검색량","광고 클릭률 PC(%)","광고 클릭률 모바일(%)"].map(q).join(","),...rows.map(x=>[x.keyword,x.sources.map(s=>SRC_NAME[s]||s).join(" / "),x.pc??"",x.mobile??"",x.total??"",x.comp??"",exDocs[x.keyword]??"",ratioOf(x)?.toFixed(1)??"",x.ctr?.pc??"",x.ctr?.mobile??""].map(q).join(","))];
+    const blob=new Blob(["\ufeff"+lines.join("\r\n")],{type:"text/csv;charset=utf-8"}); // 엑셀에서 한글이 안 깨지도록 BOM
+    const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`keywave_확장_${exData.seeds[0]}_${rows.length}개.csv`;a.click();URL.revokeObjectURL(a.href);
+    toast(`CSV로 ${rows.length}개를 저장했어요`);
+  };
+}
+/* ---------- 🤖 키워드 확장 + AI 추천 (Claude 또는 Gemini, 열쇠 있는 쪽) ---------- */
+async function setupExpandAI(){
+  const box=document.getElementById("exAI"); box.style.display="";
+  const keys=await (await fetch("/api/keys")).json().catch(()=>({}));
+  const provs=keys.ai_providers||[];
+  const NAME={claude:"Claude (유료)",gemini:"Google Gemini (무료)"};
+  // Claude를 맨 앞에 두되, 열쇠가 없으면 고를 수 없게 표시
+  exAIProv.innerHTML=["claude","gemini"].map(p=>`<option value="${p}" ${provs.includes(p)?"":"disabled"}>${NAME[p]}${provs.includes(p)?"":" — 열쇠 필요"}</option>`).join("");
+  const first=["claude","gemini"].find(p=>provs.includes(p)); if(first) exAIProv.value=first;
+  exAIGo.disabled=!first; exAIGo.style.opacity=first?1:.5;
+  const note=()=>exAINote.innerHTML=!first?`AI 열쇠가 필요해요 — <a href="/setup.html" style="color:var(--accent)">🔑 열쇠 넣기</a>`
+    :exAIProv.value==="claude"?"Claude는 한 번에 약 몇 센트(100원 안팎) 들어요":"Gemini 무료 사용량 안에서는 0원이에요";
+  exAIProv.onchange=note; note();
+  exAIGo.onclick=runExpandAI;
+}
+
+async function runExpandAI(){
+  const {rows}=filteredExpand();
+  const send=rows.slice(0,80).map(x=>({keyword:x.keyword,pc:x.pc,mobile:x.mobile,comp:x.comp,docs:typeof exDocs[x.keyword]==="number"?exDocs[x.keyword]:null}));
+  if(!send.length) return toast("보낼 키워드가 없어요");
+  exAIGo.disabled=true; exAIGo.textContent="AI가 고르는 중… (보통 20~60초)";
+  let d; try{ const r=await fetch("/api/ai_expand",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({provider:exAIProv.value,seeds:exData.seeds,rows:send})}); d=await r.json(); if(!r.ok) throw new Error(d.error); }
+  catch(err){ d={error_note:err.message}; }
+  exAIGo.disabled=false; exAIGo.textContent="AI로 다시 고르기";
+  if(d.error_note){ exAIOut.innerHTML=`<p style="color:#fbbf24;margin-top:12px">⚠️ ${esc(d.error_note)}</p>`; return; }
+  const x=d.result, sent=new Set(send.map(r=>norm(r.keyword)));
+  exAIOut.innerHTML=`<div class="ai-out" style="margin-top:16px">
+    <div class="ai-verdict"><span class="lv lv-good">AI 요약</span><div>${esc(x.summary)}</div></div>
+    <div style="margin-bottom:12px">${checkBox(d.check)}</div>
+    <div class="ai-box" style="margin-bottom:12px"><h5>🏆 추천 키워드 (순위)</h5>
+      <div style="overflow-x:auto"><table style="min-width:620px"><tr><td>#</td><td>키워드</td><td>근거 (KEYWAVE 데이터)</td><td>이유 · 제목 아이디어</td></tr>
+      ${[...x.picks].sort((a,b)=>a.rank-b.rank).map(p=>`<tr><td>${p.rank}</td><td><a href="#" data-w="${esc(p.keyword)}" style="color:var(--text);border-bottom:1px dashed var(--muted)">${esc(p.keyword)}</a>${sent.has(norm(p.keyword))?"":` <small style="color:#fbbf24">(보낸 목록에 없음)</small>`}</td><td class="ev">${esc(p.evidence)}${warnNums(p.unverified)}</td><td>${esc(p.why)}<br><small style="color:var(--muted)">✏️ ${esc(p.title_idea)}</small></td></tr>`).join("")}</table></div></div>
+    <div class="ai-grid">
+      <div class="ai-box"><h5>🧩 검색 의도별 묶음</h5>${x.groups.map(g=>`<p style="font-size:13px;margin-bottom:6px"><b>${esc(g.name)}</b> <small style="color:var(--muted)">${esc(g.intent)}</small></p><div class="chips" style="justify-content:flex-start;margin-bottom:10px">${g.keywords.map(w=>`<button class="chip" data-w="${esc(w)}">${esc(w)}</button>`).join("")}</div>`).join("")}</div>
+      <div class="ai-box"><h5>🚫 피하면 좋은 키워드</h5>${x.avoid.length?`<table>${x.avoid.map(a=>`<tr><td>${esc(a.keyword)}</td><td>${esc(a.why)}</td></tr>`).join("")}</table>`:`<p style="font-size:13px;color:var(--muted)">없어요</p>`}</div>
+    </div>
+    <p class="ai-foot">${d.cached?"♻️ 1시간 안에 같은 목록으로 만든 결과예요 (추가 비용 없음) · ":""}보낸 키워드 ${d.sent}개 · 모델: ${esc(d.model)} · 토큰 입력 ${fmt(d.usage.input)} / 출력 ${fmt(d.usage.output)} · ${d.provider==="gemini"?"무료 사용량 사용 (0원)":`비용 약 $${d.usage.cost_usd} (추정)`}${d.usage.fallback?` · ⚠️ ${esc(d.usage.fallback)}`:""}<br>
+    키워드를 누르면 위에서 바로 분석해요. 블로그 글 수를 모르는(표에서 "-") 키워드는 AI가 경쟁을 판단하지 않도록 했어요.</p></div>`;
+  exAIOut.querySelectorAll("[data-w]").forEach(b=>b.onclick=e=>{e.preventDefault();kw.value=b.dataset.w;analyze()});
+}
+
+function docsCell(x){
+  const d=exDocs[x.keyword];
+  return typeof d==="number"?fmt(d):exDocsPending.has(x.keyword)?"…":d===null?"오류":"-";
+}
+function ratioCell(x){ const r=ratioOf(x); return r==null?"-":r.toFixed(1)+(exact(x.pc,x.mobile)?"":"~"); }
+// 화면 위쪽 키워드 중 아직 글 수를 모르는 것만 서버에 한 번에 물어봐요
+async function fetchDocsFor(rows){
+  const need=rows.map(x=>x.keyword).filter(k=>!(k in exDocs)&&!exDocsPending.has(k));
+  if(!need.length) return;
+  need.forEach(k=>exDocsPending.add(k));
+  let d=null; try{ d=await (await fetch(`/api/docs?q=${encodeURIComponent(need.join("\n"))}`)).json(); }catch{}
+  // 모르는 값은 끝까지(정렬 방향과 상관없이) 아래로 가게 하고, 열쇠가 없을 땐 "-"로 둡니다
+  need.forEach(k=>{exDocsPending.delete(k); exDocs[k]=d?.error_note?"nokey":(d?.docs?.[k]??null);});
+  if(d?.error_note) toast(d.error_note);
+  renderExpand();
+}
+exForm.onsubmit=e=>{e.preventDefault();runExpand()};
+[exInc,exExc,fVolMin,fVolMax,fMob,fCtr].forEach(el=>el.oninput=renderExpand); exVolOnly.onchange=renderExpand; fComp.onchange=renderExpand;
+
+/* ---------- 📈 트렌드 자세히 보기: 네이버 데이터랩 (HUB) ---------- */
+const SERIES=["#3987e5","#d95926","#199e70","#c98500","#d55181"]; // 범주형 팔레트 다크 1~5 (dataviz 기준 팔레트)
+const AGES=[["1","0~12세"],["2","13~18세"],["3","19~24세"],["4","25~29세"],["5","30~34세"],["6","35~39세"],["7","40~44세"],["8","45~49세"],["9","50~54세"],["10","55~59세"],["11","60세 이상"]];
+const DAYS=["월","화","수","목","금","토","일"];
+const iso=d=>d.toISOString().slice(0,10);
+
+function trendPanelHTML(k){
+  const end=new Date(Date.now()-864e5), start=new Date(end); start.setFullYear(end.getFullYear()-1);
+  return `<div class="td" id="td"><h4>📈 트렌드 자세히 보기</h4>
+    <p class="sub">네이버 데이터랩 검색어 트렌드예요. 값은 <b>이 조건 안에서 가장 높은 때를 100</b>으로 한 상대값이라, 조건을 바꾼 결과끼리는 숫자를 비교하면 안 돼요.</p>
+    <div class="td-ctl">
+      <label>비교 키워드 (쉼표, 최대 4개)<input id="tdCmp" placeholder="예: 글램핑, 차박"></label>
+      <label>시작<input type="date" id="tdStart" value="${iso(start)}" min="2016-01-01"></label>
+      <label>끝<input type="date" id="tdEnd" value="${iso(end)}"></label>
+      <label>단위<select id="tdUnit"><option value="month">월</option><option value="week">주</option><option value="date">일</option></select></label>
+      <label>기기<select id="tdDev"><option value="">전체</option><option value="pc">PC</option><option value="mo">모바일</option></select></label>
+      <label>성별<select id="tdGen"><option value="">전체</option><option value="m">남성</option><option value="f">여성</option></select></label>
+    </div>
+    <div class="td-ages"><span>연령 (안 고르면 전체):</span>${AGES.map(([c,l])=>`<label><input type="checkbox" value="${c}">${l}</label>`).join("")}</div>
+    <button class="go" id="tdGo">적용</button>
+    <div id="tdOut"><p class="sub" style="margin-top:12px">불러오는 중…</p></div></div>`;
+}
+
+function bindTrendPanel(k){
+  tdGo.onclick=()=>loadTrendDetail(k);
+  tdCmp.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();loadTrendDetail(k)}};
+  loadTrendDetail(k);
+}
+
+let tdSeq=0;
+async function loadTrendDetail(k){
+  const seq=++tdSeq;
+  const words=[k,...tdCmp.value.split(",").map(x=>x.trim()).filter(Boolean)].slice(0,5);
+  const ages=[...document.querySelectorAll("#td .td-ages input:checked")].map(c=>c.value).join(",");
+  const qs=new URLSearchParams({q:words.join(","),start:tdStart.value,end:tdEnd.value,unit:tdUnit.value,device:tdDev.value,gender:tdGen.value,ages});
+  // 이 패널의 출력 칸을 붙잡아 둡니다. 기다리는 동안 새 검색으로 패널이 사라지면 그리지 않아요.
+  const tdOut=document.getElementById("tdOut");
+  tdOut.innerHTML=`<p class="sub" style="margin-top:12px">불러오는 중…</p>`;
+  let d; try{const r=await fetch("/api/trend?"+qs); d=await r.json(); if(!r.ok) throw new Error(d.error);}catch(err){ if(seq===tdSeq&&tdOut.isConnected) tdOut.innerHTML=`<p style="color:#f87171;margin-top:12px">${esc(err.message)}</p>`; return }
+  if(seq!==tdSeq||!tdOut.isConnected) return;
+  if(!d.series.length){tdOut.innerHTML=`<p style="color:#fbbf24;margin-top:12px">⚠️ ${esc(d.error_note||"이 조건에는 데이터가 없어요")}</p>`;return}
+  const f=d.filters, cond=[f.device?{pc:"PC",mo:"모바일"}[f.device]:"기기 전체", f.gender?{m:"남성",f:"여성"}[f.gender]:"성별 전체", f.ages?f.ages.map(a=>AGES.find(x=>x[0]===a)[1]).join("·"):"연령 전체"].join(" · ");
+  tdOut.innerHTML=`${d.error_note?`<p style="color:#fbbf24;font-size:13px;margin-top:10px">⚠️ ${esc(d.error_note)}</p>`:""}
+    <div class="td-box"><h5>검색 추이 <small style="color:var(--muted);font-weight:400">${d.start} ~ ${d.end} · ${{month:"월",week:"주",date:"일"}[d.unit]}별 · ${cond}</small></h5>
+      ${legend(d.series.map(s=>s.keyword))}${lineChart(d.series,d.unit)}<div class="td-tip" id="tdTip"></div>
+      ${partialNote(d)}
+      <details><summary>표로 보기</summary>${trendTable(d.series)}</details></div>
+    ${d.weekday.length?`<div class="td-box"><h5>요일별 검색 비율 <small style="color:var(--muted);font-weight:400">같은 조건의 일별 값을 요일마다 평균 → 일주일 합 100% (${d.weekday[0].days}일치)</small></h5>
+      ${legend(d.weekday.map(w=>w.keyword))}${weekdayChart(d.weekday)}
+      <details><summary>표로 보기</summary><table><tr><th>키워드</th>${DAYS.map(x=>`<th>${x}</th>`).join("")}</tr>${d.weekday.map(w=>`<tr><td>${esc(w.keyword)}</td>${w.share.map(v=>`<td>${v}%</td>`).join("")}</tr>`).join("")}</table></details></div>`:""}`;
+  bindLineHover(d.series);
+}
+
+// 마지막 칸이 아직 끝나지 않은 기간(이번 달·이번 주)이면 알려줍니다 — 값이 낮게 보일 수 있어서
+function partialNote(d){
+  if(d.unit==="date") return "";
+  const last=d.series[0].data.at(-1).period, s=new Date(last+"T00:00:00"), e=new Date(s);
+  if(d.unit==="month") e.setMonth(e.getMonth()+1); else e.setDate(e.getDate()+7);
+  e.setDate(e.getDate()-1);
+  return new Date(d.end+"T00:00:00")<e?`<p class="sub" style="margin:6px 0 0">ⓘ 마지막 칸(${last.slice(0,d.unit==="month"?7:10)})은 ${d.end}까지만 들어 있는 <b>끝나지 않은 기간</b>이라 낮게 보일 수 있어요.</p>`:"";
+}
+
+const legend=names=>`<div class="td-legend">${names.map((n,i)=>`<span><i style="background:${SERIES[i]}"></i>${esc(n)}</span>`).join("")}</div>`;
+
+function lineChart(series,unit){
+  const W=720,H=240,L=36,R=12,T=10,B=26, n=series[0].data.length;
+  const x=i=>L+(n<2?0:i*(W-L-R)/(n-1)), y=v=>T+(H-T-B)*(1-v/100);
+  const step=Math.max(1,Math.ceil(n/8));
+  const grid=[0,50,100].map(v=>`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="#2a3040" stroke-dasharray="${v?"3 4":"0"}"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end" font-size="11" fill="#9aa3b2">${v}</text>`).join("");
+  const xl=series[0].data.map((p,i)=>i%step===0||i===n-1?`<text x="${x(i)}" y="${H-8}" text-anchor="middle" font-size="11" fill="#9aa3b2">${unit==="month"?p.period.slice(2,7).replace("-","."):p.period.slice(5,10).replace("-",".")}</text>`:"").join("");
+  const lines=series.map((s,si)=>`<path d="${s.data.map((p,i)=>`${i?"L":"M"}${x(i).toFixed(1)},${y(p.ratio).toFixed(1)}`).join("")}" fill="none" stroke="${SERIES[si]}" stroke-width="2" stroke-linejoin="round"/>`).join("");
+  return `<svg viewBox="0 0 ${W} ${H}" id="tdSvg" role="img" aria-label="검색 추이 선 그래프">${grid}${xl}${lines}<line id="tdCross" y1="${T}" y2="${H-B}" stroke="#9aa3b2" stroke-width="1" style="display:none"/><rect x="${L}" y="${T}" width="${W-L-R}" height="${H-T-B}" fill="transparent"/></svg>`;
+}
+
+function bindLineHover(series){
+  const svg=document.getElementById("tdSvg"), tip=document.getElementById("tdTip"), cross=document.getElementById("tdCross");
+  const W=720,L=36,R=12,n=series[0].data.length;
+  svg.onmousemove=e=>{
+    const r=svg.getBoundingClientRect(), px=(e.clientX-r.left)/r.width*W;
+    const i=Math.max(0,Math.min(n-1,Math.round((px-L)/((W-L-R)/Math.max(1,n-1)))));
+    const cx=L+(n<2?0:i*(W-L-R)/(n-1));
+    cross.setAttribute("x1",cx);cross.setAttribute("x2",cx);cross.style.display="";
+    tip.innerHTML=`<b>${series[0].data[i].period}</b><br>${series.map((s,si)=>`<span style="color:${SERIES[si]}">■</span> ${esc(s.keyword)} ${s.data[i].ratio.toFixed(1)}`).join("<br>")}`;
+    tip.style.display="block";
+    const left=cx/W*r.width+14; tip.style.left=Math.min(left,r.width-tip.offsetWidth)+"px"; tip.style.top="40px";
+  };
+  svg.onmouseleave=()=>{tip.style.display="none";cross.style.display="none"};
+}
+
+function trendTable(series){
+  return `<table><tr><th>기간</th>${series.map(s=>`<th>${esc(s.keyword)}</th>`).join("")}</tr>${series[0].data.map((p,i)=>`<tr><td>${p.period}</td>${series.map(s=>`<td>${s.data[i].ratio.toFixed(1)}</td>`).join("")}</tr>`).join("")}</table>`;
+}
+
+function weekdayChart(wk){
+  const W=720,H=200,L=36,R=12,T=10,B=26, max=Math.max(...wk.flatMap(w=>w.share),1);
+  const gw=(W-L-R)/7, bw=Math.min(22,(gw-10)/wk.length), y=v=>T+(H-T-B)*(1-v/max);
+  const bars=DAYS.map((dname,di)=>{
+    const gx=L+di*gw+(gw-bw*wk.length-2*(wk.length-1))/2;
+    return wk.map((w,si)=>{const bx=gx+si*(bw+2), v=w.share[di]; return `<path d="M${bx},${H-B} V${y(v)+4} q0,-4 4,-4 h${bw-8} q4,0 4,4 V${H-B} Z" fill="${SERIES[si]}"><title>${esc(w.keyword)} · ${dname}요일 ${v}%</title></path>`}).join("")
+      +`<text x="${L+di*gw+gw/2}" y="${H-8}" text-anchor="middle" font-size="12" fill="#9aa3b2">${dname}</text>`;
+  }).join("");
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="요일별 검색 비율 막대 그래프"><line x1="${L}" x2="${W-R}" y1="${H-B}" y2="${H-B}" stroke="#2a3040"/>${bars}</svg>`;
+}
+
+/* ---------- 🤖 AI 인사이트 ---------- */
+async function bindAI(k){
+  const keys=await (await fetch("/api/keys")).json().catch(()=>({}));
+  const go=document.getElementById("aiGo"), out=document.getElementById("aiOut"), cost=document.getElementById("aiCost"), sel=document.getElementById("aiProv");
+  if(!go) return;
+  const provs=keys.ai_providers||[];
+  if(!provs.length){ go.disabled=true; go.style.opacity=.5; cost.innerHTML=`Gemini(무료) 또는 Claude 열쇠가 필요해요 — <a href="/setup.html" style="color:var(--accent)">🔑 열쇠 넣기</a>`; return; }
+  const NAME={gemini:"Google Gemini (무료)",claude:"Claude (유료)"};
+  const COST={gemini:"Gemini 무료 사용량 안에서는 0원이에요 (하루·분당 한도가 있어요)",claude:"Claude는 한 번에 약 몇 센트(100원 안팎) 들어요"};
+  // 열쇠가 둘 다 있으면 고를 수 있게 (기본: 무료인 Gemini)
+  if(provs.length>1){ sel.style.display=""; sel.innerHTML=provs.map(p=>`<option value="${p}">${NAME[p]}</option>`).join(""); }
+  const cur=()=>provs.length>1?sel.value:provs[0];
+  const showCost=()=>cost.textContent=`${NAME[cur()]} 사용 · ${COST[cur()]} · 같은 키워드는 1시간 동안 다시 묻지 않아요`;
+  sel.onchange=showCost; showCost();
+  go.onclick=async()=>{
+    go.disabled=true; go.textContent="AI가 분석하는 중… (보통 20~60초)";
+    let d; try{ const r=await fetch(`/api/ai?q=${encodeURIComponent(k)}&provider=${cur()}`); d=await r.json(); if(!r.ok) throw new Error(d.error); }
+    catch(err){ d={error_note:err.message}; }
+    go.disabled=false; go.textContent="AI 인사이트 다시 생성하기";
+    if(!out.isConnected) return;
+    if(d.error_note){ out.innerHTML=`<p style="color:#fbbf24;margin-top:12px">⚠️ ${esc(d.error_note)}</p>`; return; }
+    renderAI(out,d);
+  };
+}
+
+// 서버가 AI 답을 KEYWAVE 데이터와 대조한 결과(check)를 보여줍니다
+const warnNums=list=>list?.length?`<br><small style="color:#fbbf24">⚠️ 데이터에 없는 숫자: ${list.map(esc).join(", ")}</small>`:"";
+function checkBox(c){
+  if(!c) return "";
+  if(c.ok) return `<div class="ai-box" style="grid-column:1/-1;border:1px solid #22c55e55"><h5>🔎 자동 검증: 통과</h5><p style="font-size:13px;color:var(--muted)">AI 답의 숫자와 키워드를 KEYWAVE가 받은 데이터와 하나하나 대조했어요. 데이터에 없는 값은 없었어요.</p></div>`;
+  return `<div class="ai-box" style="grid-column:1/-1;border:1px solid #fbbf2488"><h5>🔎 자동 검증: 데이터에 없는 내용 ${c.issues.length}건</h5>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:6px">AI가 KEYWAVE 데이터에 없는 숫자나 키워드를 썼어요. 이 부분은 믿지 마세요. (계산해서 나온 배수·비율도 여기 표시될 수 있어요)</p>
+    <ul style="font-size:13px">${c.issues.map(i=>`<li>${esc(i.where)} — ${esc(i.type)} <b>${esc(i.value)}</b>${i.removed?" <small>(화면에서 뺐어요)</small>":""}</li>`).join("")}</ul></div>`;
+}
+function renderAI(out,d){
+  const x=d.insight, lv={"공략 추천":"lv-good","조건부 추천":"lv-mid","비추천":"lv-bad","판단 보류":"lv-none"}[x.verdict.level]||"lv-none";
+  const outlineText=`제목: ${x.outline.title}\n대상 독자: ${x.outline.reader}\n\n소제목 구성:\n${x.outline.sections.map((s,i)=>`${i+1}. ${s}`).join("\n")}\n\n체크포인트:\n${x.outline.checklist.map(c=>`- ${c}`).join("\n")}`;
+  out.innerHTML=`<div class="ai-out" style="margin-top:16px">
+    <div class="ai-verdict"><span class="lv ${lv}">${esc(x.verdict.level)}</span><div>${esc(x.verdict.summary)}</div></div>
+    <div class="ai-grid">
+      ${checkBox(d.check)}
+      <div class="ai-box"><h5>📏 판단 근거 (KEYWAVE 데이터)</h5><table>${x.signals.map(sg=>`<tr><td>${esc(sg.name)}</td><td><span class="ev">${esc(sg.evidence)}</span><br>${esc(sg.meaning)}${warnNums(sg.unverified)}</td></tr>`).join("")}</table></div>
+      <div class="ai-box"><h5>🧩 주제 묶음</h5>${x.clusters.map(c=>`<p style="font-size:13px;margin-bottom:6px"><b>${esc(c.name)}</b></p><div class="chips" style="justify-content:flex-start;margin-bottom:10px">${c.keywords.map(w=>`<button class="chip" data-w="${esc(w)}">${esc(w)}</button>`).join("")}</div>`).join("")}</div>
+      <div class="ai-topics">${x.topics.map(t=>`<div class="ai-topic"><b>${esc(t.title)}</b>🎯 ${esc(t.target_keyword)}${t.keyword_ok===false?` <small style="color:#fbbf24">(데이터에 없는 키워드)</small>`:""}<br>${esc(t.why)}${warnNums(t.unverified)}</div>`).join("")}</div>
+      <div class="ai-box" style="grid-column:1/-1"><h5>📝 추천 글 구성 — ${esc(x.outline.title)}</h5>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:8px">대상 독자: ${esc(x.outline.reader)}</p>
+        <ol>${x.outline.sections.map(s=>`<li>${esc(s)}</li>`).join("")}</ol>
+        <p style="font-size:13px;margin:10px 0 4px"><b>체크포인트</b></p><ul>${x.outline.checklist.map(c=>`<li>${esc(c)}</li>`).join("")}</ul>
+        <button class="go" id="aiCopy" style="margin-top:12px;font-size:13px;padding:8px 14px">글 구성 복사하기</button></div>
+    </div>
+    <p class="ai-foot">${d.cached?"♻️ 1시간 안에 만든 결과를 다시 보여줘요 (추가 비용 없음) · ":""}모델: ${esc(d.model)} · 토큰 입력 ${fmt(d.usage.input)} / 출력 ${fmt(d.usage.output)} · ${d.provider==="gemini"?"무료 사용량 사용 (0원)":`비용 약 $${d.usage.cost_usd} (추정)`}${d.usage.fallback?` · ⚠️ ${esc(d.usage.fallback)}`:""}<br>
+    AI의 판단은 참고용이에요. 해석과 추천 문장은 AI가 쓴 거예요. 숫자·키워드는 위 🔎 자동 검증에서 KEYWAVE 데이터와 대조했어요.</p></div>`;
+  out.querySelectorAll("[data-w]").forEach(b=>b.onclick=()=>{kw.value=b.dataset.w;analyze()});
+  document.getElementById("aiCopy").onclick=()=>{(navigator.clipboard?.writeText(outlineText)||Promise.reject()).then(()=>toast("글 구성을 복사했어요"),()=>toast("복사가 안 돼요"))};
+}
+
+// 7) 복사 알림
+function toast(msg){
+  document.querySelector(".toast")?.remove();
+  const t=document.createElement("div");t.className="toast";t.setAttribute("role","status");t.textContent=msg;
+  document.body.appendChild(t);setTimeout(()=>t.remove(),1800);
+}
+
+// 사이트별 연관(자동완성) 키워드. id가 있는 곳은 서버에서 키워드를 받아오고, 없는 곳은 해당 사이트 검색 링크만 제공합니다.
+const SITES={
+  "검색":[
+    ["구글 검색","google",q=>`https://www.google.com/search?q=${q}`],
+    ["네이버 검색","naver",q=>`https://search.naver.com/search.naver?query=${q}`],
+    ["다음 검색","daum",q=>`https://search.daum.net/search?q=${q}`],
+    ["줌 검색",null,q=>`https://search.zum.com/search.zum?query=${q}`],
+    ["빙 검색","bing",q=>`https://www.bing.com/search?q=${q}`],
+    ["야후 검색","yahoo",q=>`https://search.yahoo.com/search?p=${q}`],
+    ["기타 검색","etc",q=>`https://duckduckgo.com/?q=${q}`]
+  ],
+  "SNS":[
+    ["카카오톡",null,q=>`https://search.daum.net/search?w=tot&q=${q}%20%EC%B9%B4%EC%B9%B4%EC%98%A4%ED%86%A1`],
+    ["카카오스토리",null,q=>`https://search.daum.net/search?w=social&q=${q}`],
+    ["페이스북",null,q=>`https://www.facebook.com/search/top?q=${q}`],
+    ["트위터",null,q=>`https://x.com/search?q=${q}`],
+    ["유튜브","youtube",q=>`https://www.youtube.com/results?search_query=${q}`],
+    ["인스타그램",null,(q,raw)=>`https://www.instagram.com/explore/tags/${encodeURIComponent(raw.replace(/\s+/g,""))}/`],
+    ["기타 SNS",null,q=>`https://www.threads.net/search?q=${q}`]
+  ]
+};
+let siteData={}, siteKw="", siteSel=engine.value;
+
+async function loadSites(k){
+  siteKw=k; siteData={};
+  try{ siteData=await (await fetch(`/api/suggest?q=${encodeURIComponent(k)}`)).json(); }catch{}
+  if(siteKw!==k) return; // 그 사이 다른 키워드를 검색했으면 무시
+  siteSel=engine.value;
+  renderSites();
+  renderOverview(k);
+  if(engine.value!=="검색1") document.getElementById("sites")?.scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+// 사이트별 글자색 (드롭다운)
+const ENGINE_COLOR={"검색1":"#03c75a","검색0":"#4285f4","검색2":"#ff5a4a","검색3":"#3b82f6","검색4":"#0ea5e9","검색5":"#7b2cbf","SNS4":"#ff0000"};
+// 드롭다운을 바꾸면: 이미 결과가 있으면 그 사이트 결과로 바로 전환, 키워드만 있으면 바로 분석
+engine.onchange=()=>{
+  engine.style.color=ENGINE_COLOR[engine.value];
+  siteSel=engine.value;
+  if(document.getElementById("sites")&&siteKw===kw.value.trim()){
+    renderSites();
+    document.getElementById("sites").scrollIntoView({behavior:"smooth",block:"start"});
+  }else if(kw.value.trim()) analyze();
+};
+engine.style.color=ENGINE_COLOR[engine.value];
+
+function renderSites(){
+  const box=document.getElementById("sites"); if(!box) return;
+  const cnt=id=>id&&siteData[id]?siteData[id].length:0;
+  const col=name=>{
+    const rows=SITES[name], total=rows.reduce((s,[,id])=>s+cnt(id),0);
+    return `<div class="scol"><div class="shead"><span>${name}</span><span>${total}</span></div>
+      ${rows.map(([label,id],i)=>`<button class="srow ${siteSel===name+i?"on":""}" data-s="${name+i}"><span>${label}</span><small>${id?(siteData[id]==null?"오류":cnt(id)):"↗"}</small></button>`).join("")}</div>`;
+  };
+  const all=[...SITES["검색"].map((r,i)=>["검색"+i,r]),...SITES["SNS"].map((r,i)=>["SNS"+i,r])];
+  const [,[label,id,link]]=all.find(([key])=>key===siteSel)||all[0];
+  const q=encodeURIComponent(siteKw), words=id?siteData[id]:null;
+  box.innerHTML=`<h4>사이트별 연관 키워드</h4>
+    <div class="sgrid">${col("검색")}${col("SNS")}</div>
+    <div class="sbox"><div class="top"><strong>${label} · “${esc(siteKw)}”</strong><a href="${link(q,siteKw)}" target="_blank" rel="noopener">${label}에서 직접 보기 ↗</a></div>
+      ${!id?`<p style="color:var(--muted)">이 사이트는 연관 키워드를 공개하지 않아 링크로만 확인할 수 있어요.</p>`
+        :words==null?`<p style="color:#f87171">키워드를 불러오지 못했어요.</p>`
+        :words.length?`<div class="chips" style="justify-content:flex-start">${words.map(w=>`<button class="chip" data-w="${esc(w)}">${esc(w)}</button>`).join("")}</div>`
+        :`<p style="color:var(--muted)">연관 키워드가 없어요.</p>`}</div>`;
+  box.querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{
+    siteSel=b.dataset.s;
+    if([...engine.options].some(o=>o.value===siteSel)){engine.value=siteSel;engine.style.color=ENGINE_COLOR[siteSel];}
+    renderSites();
+  });
+  box.querySelectorAll("[data-w]").forEach(b=>b.onclick=()=>{kw.value=b.dataset.w;analyze()});
+}
+
+// 활용 방법: 각 항목의 ▶ 해보기는 예시 키워드로 실제 기능을 실행하고 그 자리로 이동합니다.
+// 오른쪽 미리보기는 예시 키워드의 실제 데이터예요 (장식용 막대가 아님).
+const exWord=()=>exKw.value.trim()||"캠핑";
+const waitFor=async(f,n=80)=>{for(let i=0;i<n&&!f();i++)await new Promise(r=>setTimeout(r,200));return f()};
+function flashTo(el){ if(!el) return toast("이 기능은 열쇠가 있어야 보여요"); el.scrollIntoView({behavior:"smooth",block:"center"}); el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash"); }
+async function analyzeThen(sel){ kw.value=exWord(); engine.value="검색1"; await analyze(); flashTo(await waitFor(()=>document.querySelector(sel))); }
+
+async function aiThen(){ kw.value=exWord(); engine.value="검색1"; await analyze(); await waitFor(()=>document.querySelector(".sgrid")); await new Promise(r=>setTimeout(r,300)); flashTo(document.getElementById("ai")); }
+const stepData=[
+  ["탐색 단계","지금 사람들이 찾는 주제를 발견합니다.",[
+    ["실시간 급상승 검색어 (구글 트렌드)",()=>flashTo(document.getElementById("rank"))],
+    ["급상승 검색어 관련 뉴스 (네이버 뉴스)",()=>flashTo(document.querySelector("#rank .rank-row:not(.head)"))],
+    ["검색어를 누르면 바로 분석",()=>document.querySelector("#rank [data-w]")?.click()]], "trend"],
+  ["확장 단계","하나의 키워드를 여러 키워드로 넓힙니다.",[
+    ["사이트별 연관 키워드 (네이버·구글·다음·빙·야후·유튜브)",()=>analyzeThen(".sgrid")],
+    ["키워드 확장 (포함/제외 필터 · CSV)",async()=>{exSeeds.value=exWord(); flashTo(document.getElementById("exForm")); await runExpand();}],
+    ["#태그로 한 번에 복사",()=>analyzeThen(".tagbar")]], "sites"],
+  ["선별 단계","쓸 만한 키워드를 골라냅니다. (네이버 검색광고 키 필요)",[
+    ["PC·모바일 월간 검색량",()=>analyzeThen(".stats")],
+    ["네이버 광고 경쟁 정도",()=>analyzeThen("#result .pill")],
+    ["⭐추천 키워드와 정렬",()=>analyzeThen(".related")]], "related"],
+  ["타이밍 단계","언제 글을 올릴지 정합니다. (네이버 API HUB 키 필요)",[
+    ["최근 12개월 검색 추이 · 가장 많이 찾은 달",()=>analyzeThen(".peak")],
+    ["성별·연령·기기별 트렌드 · 비교 키워드",()=>analyzeThen("#td")],
+    ["요일별 검색 비율",async()=>{await analyzeThen("#td"); flashTo(await waitFor(()=>document.querySelector('#tdOut svg[aria-label^="요일"]')?.parentElement));}]], "months"],
+  // AI는 쓸 때마다 비용(또는 무료 한도)이 들어서, ▶ 해보기는 실행 버튼이 있는 곳까지만 데려가요
+  // (위쪽 사이트별 키워드가 늦게 채워지며 AI 상자를 밀어내므로, 다 불러온 뒤 이동)
+  ["AI 분석 단계","모은 데이터를 근거로 AI가 글감과 글 구성을 추천합니다. (Gemini 또는 Claude 키 필요)",[
+    ["🤖 AI 인사이트 (판정 · 근거 · 글 주제 · 글 구성)",()=>aiThen()],
+    ["AI로 키워드 고르기 (키워드 확장 결과에서 순위 추천)",async()=>{exSeeds.value=exWord(); await runExpand(); flashTo(document.getElementById("exAI"));}],
+    ["🔎 자동 검증 (AI 답의 숫자·키워드를 데이터와 대조)",()=>aiThen()]], "ai"]
+];
+let cur=0;
+const previewCache={};
+function renderSteps(){
+  steps.innerHTML=stepData.map((s,i)=>`<button class="${i===cur?"on":""}" onclick="cur=${i};renderSteps()"><em>0${i+1}</em>${s[0]}</button>`).join("");
+  const [,t,list,kind]=stepData[cur];
+  panel.innerHTML=`<div><h3>${t}</h3><ul>${list.map(([l],i)=>`<li>${l}<button class="try" data-i="${i}">▶ 해보기</button></li>`).join("")}</ul></div>
+    <div class="mock" id="stepPreview"><h5>미리보기 불러오는 중…</h5></div>`;
+  panel.querySelectorAll(".try").forEach(b=>b.onclick=()=>list[+b.dataset.i][1]());
+  renderPreview(kind);
+}
+async function getCached(path){ return previewCache[path]??=fetch(path).then(r=>r.json()).catch(()=>null); }
+async function renderPreview(kind){
+  const box=document.getElementById("stepPreview"), w=exWord(), q=encodeURIComponent(w), want=cur;
+  const done=html=>{ if(want===cur&&box.isConnected) box.innerHTML=html; };
+  if(kind==="ai"){
+    const k=await getCached("/api/keys"); if(!k) return done(`<h5>불러오지 못했어요</h5>`);
+    const has=k.ai_providers||[], row=(n,ok)=>`<li>${n} ${ok?"✅ 사용 가능":`<small style="color:var(--muted)">열쇠 없음</small>`}</li>`;
+    return done(`<h5>AI 사용 준비 상태 (지금 설정 기준)</h5><ol>${row("Google Gemini (무료 사용량)",has.includes("gemini"))}${row("Claude (유료)",has.includes("claude"))}</ol>
+      <p style="font-size:13px;color:var(--muted);margin-top:10px">${has.length?`“${esc(w)}”로 ▶ 해보기를 누르면 AI 버튼 앞까지 이동해요. 버튼을 눌러야 AI가 실행돼요.`:`<a href="/setup.html" style="color:var(--accent)">🔑 열쇠 넣기</a>에서 Gemini 또는 Claude 열쇠를 넣어 주세요.`}</p>`);
+  }
+  if(kind==="trend"){
+    const d=window.trendingData;
+    return done(d?`<h5>지금 뜨는 검색어 상위 5 · 구글 트렌드 (${esc(d.updated)} 기준)</h5><ol>${d.items.slice(0,5).map(x=>`<li>${esc(x.keyword)} <small style="color:var(--muted)">${esc(x.traffic)}</small></li>`).join("")}</ol>`:`<h5>급상승 검색어를 불러오는 중…</h5>`);
+  }
+  if(kind==="sites"){
+    const d=await getCached(`/api/suggest?q=${q}`); if(!d) return done(`<h5>불러오지 못했어요</h5>`);
+    const rows=OV_SITES.filter(([id])=>Array.isArray(d[id])).map(([id,n])=>[n,d[id].length]), max=Math.max(...rows.map(r=>r[1]),1);
+    return done(`<h5>“${esc(w)}” 사이트별 연관 키워드 수 (실제 데이터)</h5>${rows.map(([n,v])=>`<div class="hb"><span class="lab">${n}</span><span class="track"><span class="fill" style="display:block;width:${v/max*100}%"></span></span><span class="val">${v}개</span></div>`).join("")}`);
+  }
+  const d=await getCached(`/api/analyze?q=${q}`); if(!d) return done(`<h5>불러오지 못했어요</h5>`);
+  if(kind==="related"){
+    if(!d.related.length) return done(d.related_info?`<h5>${d.related_info.total?`네이버 검색광고 연관 키워드 ${fmt(d.related_info.total)}개 중 “${esc(w)}”이(가) 들어간 것이 없어요`:`네이버 검색광고가 “${esc(w)}”의 연관 키워드를 주지 않았어요`}</h5>`:`<h5>검색량은 네이버 검색광고 열쇠가 있어야 보여요</h5>`);
+    const top=[...d.related].sort((a,b)=>(num(b.pc)+num(b.mobile))-(num(a.pc)+num(a.mobile))).slice(0,5), max=num(top[0].pc)+num(top[0].mobile)||1;
+    return done(`<h5>“${esc(w)}”이(가) 들어간 연관 키워드 검색량 상위 5 · PC+모바일 (실제 데이터, ${fmt(d.related_info.matched)}개 중)</h5>${top.map(x=>{const v=num(x.pc)+num(x.mobile);return `<div class="hb"><span class="lab">${esc(x.keyword)}</span><span class="track"><span class="fill" style="display:block;width:${v/max*100}%"></span></span><span class="val">${fmt(v)}${exact(x.pc,x.mobile)?"":"+"}</span></div>`}).join("")}`);
+  }
+  if(!d.trend.length) return done(`<h5>12개월 추이는 NAVER API HUB 열쇠가 있어야 보여요</h5>`);
+  const max=Math.max(...d.trend.map(t=>t.ratio),1);
+  return done(`<h5>“${esc(w)}” 최근 12개월 검색 추이 · 데이터랩 상대지수 (실제 데이터)</h5><div class="vbars">${d.trend.map(t=>`<div style="height:${t.ratio/max*100}%" title="${t.period} ${t.ratio.toFixed(1)}"><span>${+t.period.slice(5)}</span></div>`).join("")}</div>`);
+}
+exKw.onchange=()=>renderSteps();
+renderSteps();
+
+// 구글 트렌드(한국) 급상승 검색어로 인기 키워드, 순위, 트렌드 카드를 채웁니다
+async function loadTrending(){
+  let d;
+  try{ const res=await fetch("/api/trending"); d=await res.json(); if(!res.ok) throw new Error(d.error); }
+  catch(err){
+    const msg=`<p style="color:#f87171;padding:16px">급상승 검색어를 불러오지 못했어요: ${esc(err.message)}</p>`;
+    hotChips.innerHTML=msg; rank.innerHTML=msg; trends.innerHTML=msg; return;
+  }
+  window.trendingData=d; renderSteps();
+  const items=d.items, chip=x=>`<button class="chip" data-w="${esc(x.keyword)}">${esc(x.keyword)}</button>`;
+  hotChips.innerHTML=items.slice(0,8).map(chip).join("");
+  trendNote.innerHTML=`지금 한국에서 검색이 급증한 키워드와 관련 뉴스입니다. 번호는 구글 트렌드가 보여준 순서이고, 검색 수 순위가 아니에요.<br><small style="font-size:13px">출처: ${esc(d.source)} · ${esc(d.updated)} 기준</small>`;
+  rank.innerHTML=`<div class="rank-row head"><span>#</span><span>검색어</span><span class="hide">관련 뉴스</span><span>검색 수 (대략)</span></div>`+
+    items.map((x,i)=>`<div class="rank-row"><span class="n">${i+1}</span><span><a href="#" data-w="${esc(x.keyword)}">${esc(x.keyword)}</a><a class="nnews" href="${naverNews(x.keyword)}" target="_blank" rel="noopener">네이버 뉴스↗</a></span>
+      <span class="hide" style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${x.news?`<a href="${esc(x.news.url)}" target="_blank" rel="noopener" style="color:var(--muted)">${esc(x.news.source)}</a>`:"-"}</span>
+      <span class="up">${esc(x.traffic)}</span></div>`).join("");
+  const half=Math.ceil(items.length/2);
+  trends.innerHTML=[["⚡ 지금 급상승",items.slice(0,half),0],["⚡ 이어서 급상승",items.slice(half),half]]
+    .map(([t,l,o])=>`<div class="tcard"><h4>${t}</h4><ol start="${o+1}">${l.map(x=>`<li><a href="#" data-w="${esc(x.keyword)}">${esc(x.keyword)}</a> <small style="color:var(--muted)">${esc(x.traffic)}</small></li>`).join("")}</ol></div>`).join("")
+    +`<div class="tcard wide"><h4>📰 관련 뉴스</h4><ol>${items.filter(x=>x.news).slice(0,6).map(x=>`<li><a href="${esc(x.news.url)}" target="_blank" rel="noopener">${esc(x.news.title)}</a> <small style="color:var(--muted)">${esc(x.news.source)}</small></li>`).join("")}</ol></div>`;
+  document.querySelectorAll("#hotChips [data-w], #rank [data-w], #trends [data-w]").forEach(b=>b.onclick=e=>{e.preventDefault();kw.value=b.dataset.w;analyze()});
+}
+loadTrending();
+
+</script>
+</body>
+</html>

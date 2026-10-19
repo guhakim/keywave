@@ -1,0 +1,8 @@
+# 비밀 키 — 절대 올리지 않기
+.env
+
+# 내 컴퓨터에서만 쓰는 것
+.venv/
+__pycache__/
+.claude/
+.DS_Store

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KEYWAVE 열쇠 넣기</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0c10;--bg2:#11141b;--card:#161a23;--line:#262b37;--text:#f2f4f8;--muted:#9aa3b2;--accent:#22d3a6;--accent2:#3b82f6;--grad:linear-gradient(90deg,var(--accent),var(--accent2))}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:"Noto Sans KR",system-ui,sans-serif;line-height:1.6;padding:32px 16px}
+main{max-width:640px;margin:0 auto;display:grid;gap:18px}
+a{color:var(--accent)}
+h1{font-size:26px;font-weight:800}
+.lead{color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;display:grid;gap:14px}
+.card h2{font-size:17px}
+.card h2 small{color:var(--muted);font-weight:400;font-size:13px;margin-left:6px}
+label{display:grid;gap:6px;font-size:14px;color:var(--muted)}
+label b{color:var(--text)}
+input{font:inherit;font-size:15px;padding:12px 14px;border-radius:10px;border:1px solid var(--line);background:var(--bg2);color:var(--text);width:100%}
+input:focus{outline:none;border-color:var(--accent)}
+button{font:inherit;cursor:pointer;border:0;background:var(--grad);color:#fff;font-weight:700;font-size:16px;padding:14px;border-radius:12px}
+button:disabled{opacity:.6;cursor:wait}
+.status{font-size:14px;color:var(--muted)}
+.status b{color:var(--text)}
+#out{display:none;white-space:pre-line;background:var(--bg2);border-radius:12px;padding:16px;font-size:15px}
+.ok{color:#4ade80}.bad{color:#f87171}
+.tip{font-size:13px;color:var(--muted);background:var(--bg2);border-radius:10px;padding:12px 14px}
+</style>
+</head>
+<body>
+<main>
+  <a href="/">← KEYWAVE로 돌아가기</a>
+  <h1>🔑 열쇠 넣기</h1>
+  <p class="lead">네이버 광고주센터에서 <b>복사</b> 버튼을 누르고, 아래 칸에 <b>붙여넣기</b>(⌘+V) 하세요.<br>저장을 누르면 이 컴퓨터의 KEYWAVE에만 저장되고, 네이버에 바로 시험해 봐요.</p>
+  <p class="status" id="keyStatus">지금 상태 확인 중…</p>
+
+  <form id="f" class="card" autocomplete="off">
+    <h2>① 네이버 검색광고 <small>월간 검색량 · 연관 키워드 · 경쟁 정도</small></h2>
+    <label><b>CUSTOMER_ID</b> 화면 위쪽 "CUSTOMER_ID = " 뒤의 숫자
+      <input name="NAVER_AD_CUSTOMER_ID" inputmode="numeric" spellcheck="false" autocomplete="off" pattern="[0-9]{5,}" title="광고주센터의 CUSTOMER_ID 숫자 (5자리 이상)"></label>
+    <label><b>엑세스라이선스</b>
+      <input name="NAVER_AD_API_KEY" type="password" spellcheck="false"></label>
+    <label><b>비밀키</b>
+      <input name="NAVER_AD_SECRET_KEY" type="password" spellcheck="false"></label>
+
+    <h2 style="margin-top:8px">② NAVER API HUB <small>선택 · 블로그 발행량 · 12개월 그래프</small></h2>
+    <label><b>Client ID</b>
+      <input name="NAVER_HUB_CLIENT_ID" type="password" spellcheck="false"></label>
+    <label><b>Client Secret</b>
+      <input name="NAVER_HUB_CLIENT_SECRET" type="password" spellcheck="false"></label>
+
+    <h2 style="margin-top:8px">③ Google Gemini <small>선택 · 🤖 AI 인사이트 (무료 사용량 있음)</small></h2>
+    <label><b>API 키</b> aistudio.google.com → Get API key 에서 만든 키
+      <input name="GEMINI_API_KEY" type="password" spellcheck="false"></label>
+
+    <h2 style="margin-top:8px">④ Claude API <small>선택 · 🤖 AI 인사이트 (쓸 때마다 비용이 들어요)</small></h2>
+    <label><b>API 키</b> console.anthropic.com → API Keys에서 만든 키 (sk-ant-로 시작)
+      <input name="ANTHROPIC_API_KEY" type="password" spellcheck="false"></label>
+
+    <p class="tip">💡 비어 있는 칸은 그대로 두면 돼요. 이미 저장된 열쇠는 바뀌지 않아요.</p>
+    <button id="save">저장하고 시험하기</button>
+  </form>
+
+  <div id="out" role="status"></div>
+</main>
+<script>
+async function refresh(){
+  try{
+    const k=await (await fetch("/api/keys")).json();
+    keyStatus.innerHTML=`지금 상태: 검색광고 <b>${k.ad?"✅ 들어 있음":"❌ 없음"}</b> · 발행량/그래프 <b>${k.open?"✅ "+k.open:"❌ 없음"}</b> · AI 인사이트 <b>${k.ai_providers?.length?"✅ "+k.ai_providers.map(p=>({gemini:"Gemini",claude:"Claude"})[p]).join(" · "):"❌ 없음"}</b>${k.ai_sdk===false?" (AI 패키지 없음 — 'KEYWAVE 켜기'로 서버를 켜 주세요)":""}`;
+  }catch{keyStatus.textContent="서버에 연결할 수 없어요. KEYWAVE 서버가 켜져 있는지 확인해 주세요."}
+}
+f.onsubmit=async e=>{
+  e.preventDefault();
+  save.disabled=true; save.textContent="네이버에 시험하는 중…";
+  out.style.display="block"; out.className=""; out.textContent="";
+  try{
+    const res=await fetch("/api/setup",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(Object.fromEntries(new FormData(f)))});
+    const d=await res.json();
+    if(!res.ok) throw new Error(d.error);
+    const lines=[`저장했어요 (${d.saved.length}칸).`];
+    if(d.ad_test) lines.push("검색광고: "+d.ad_test);
+    if(d.open_test) lines.push("발행량/그래프: "+d.open_test);
+    if(d.gemini_test) lines.push("AI 인사이트(Gemini): "+d.gemini_test);
+    if(d.ai_test) lines.push("AI 인사이트(Claude): "+d.ai_test);
+    out.className=[d.ad_test,d.open_test,d.ai_test,d.gemini_test].some(t=>t&&t.startsWith("실패"))?"bad":"ok";
+    out.textContent=lines.join("\n");
+    f.reset();
+  }catch(err){out.className="bad";out.textContent=err.message}
+  save.disabled=false; save.textContent="저장하고 시험하기";
+  refresh();
+};
+refresh();
+</script>
+</body>
+</html>

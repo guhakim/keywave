@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>깍두기 설명 그림</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1200px; height: 800px; overflow: hidden; }
+  body { font-family: "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; background: #fff7ef; color: #3a2a1f; }
+  .card { width: 1200px; height: 800px; position: relative; padding: 70px 80px; display: none; }
+  .card.on { display: block; }
+  .tag { display: inline-block; background: #e8432e; color: #fff; font-weight: 800; font-size: 26px; padding: 8px 22px; border-radius: 999px; }
+  h1 { font-size: 76px; line-height: 1.2; margin-top: 28px; font-weight: 900; letter-spacing: -1px; }
+  h1 em { font-style: normal; color: #e8432e; }
+  h2 { font-size: 56px; font-weight: 900; margin-top: 20px; letter-spacing: -1px; }
+  .sub { font-size: 32px; margin-top: 22px; color: #7a5a44; font-weight: 600; }
+  .foot { position: absolute; left: 80px; bottom: 44px; font-size: 22px; color: #a88a73; }
+  .label { position: absolute; right: 40px; bottom: 40px; font-size: 18px; color: #b9a08c; border: 1px solid #e3cdb9; border-radius: 8px; padding: 4px 10px; background: #fffaf4; }
+  /* 깍두기 큐브 그림 */
+  .cube { position: absolute; width: 90px; height: 90px; border-radius: 16px; background: linear-gradient(145deg, #f2553c, #c92f1d); box-shadow: inset -10px -12px 0 rgba(0,0,0,.12), 0 10px 20px rgba(150,40,20,.25); }
+  .cube::after { content: ""; position: absolute; left: 14px; top: 12px; width: 26px; height: 12px; border-radius: 8px; background: rgba(255,255,255,.35); }
+  .cube.white { background: linear-gradient(145deg, #fffdf8, #ece4d6); box-shadow: inset -10px -12px 0 rgba(0,0,0,.06), 0 10px 20px rgba(120,90,60,.18); }
+  .leaf { position: absolute; width: 16px; height: 120px; border-radius: 10px; background: linear-gradient(#5fb84a, #2f8a2a); }
+  .bowl { position: absolute; right: 90px; top: 250px; width: 440px; height: 260px; border-radius: 0 0 220px 220px; background: linear-gradient(#f7f1e8, #e3d7c5); box-shadow: 0 20px 40px rgba(120,90,60,.2); }
+  .bowl::before { content: ""; position: absolute; left: -20px; top: -24px; width: 480px; height: 48px; border-radius: 50%; background: #efe6d8; box-shadow: inset 0 6px 0 rgba(0,0,0,.05); }
+  /* 표 */
+  table { margin-top: 36px; border-collapse: collapse; font-size: 32px; width: 100%; }
+  td { padding: 14px 18px; border-bottom: 2px dashed #ecd6c2; }
+  td:first-child { width: 180px; color: #e8432e; font-weight: 800; }
+  .steps { display: flex; gap: 28px; margin-top: 50px; }
+  .step { flex: 1; background: #fff; border-radius: 26px; padding: 30px 26px; box-shadow: 0 10px 24px rgba(150,100,60,.12); }
+  .step b { display: block; font-size: 30px; color: #e8432e; margin-bottom: 10px; }
+  .step span { font-size: 26px; line-height: 1.5; }
+  .big { font-size: 120px; font-weight: 900; color: #e8432e; line-height: 1; }
+  .ruler { position: absolute; height: 6px; background: #3a2a1f; border-radius: 3px; }
+  .ruler::before, .ruler::after { content: ""; position: absolute; top: -12px; width: 6px; height: 30px; background: #3a2a1f; border-radius: 3px; }
+  .ruler::before { left: 0; } .ruler::after { right: 0; }
+  .rtxt { position: absolute; font-size: 40px; font-weight: 900; }
+</style>
+</head>
+<body>
+
+<!-- 1. 표지 -->
+<section class="card" id="c1">
+  <span class="tag">자취생 간단 요리 9탄</span>
+  <h1>무 반 개로 만드는<br><em>사이다 깍두기</em></h1>
+  <p class="sub">찹쌀풀 없이 · 반찬통 1개 분량</p>
+  <div class="bowl"></div>
+  <div class="cube" style="right:330px;top:225px"></div>
+  <div class="cube" style="right:230px;top:205px;transform:rotate(12deg)"></div>
+  <div class="cube" style="right:140px;top:235px;transform:rotate(-8deg)"></div>
+  <div class="cube" style="right:280px;top:150px;transform:rotate(-14deg)"></div>
+  <div class="cube" style="right:185px;top:140px;transform:rotate(6deg)"></div>
+  <div class="leaf" style="right:400px;top:120px;transform:rotate(-30deg)"></div>
+  <div class="leaf" style="right:120px;top:110px;transform:rotate(28deg)"></div>
+  <p class="foot">guha79.tistory.com</p>
+</section>
+
+<!-- 2. 재료 -->
+<section class="card" id="c2">
+  <span class="tag">재료 · 무 반 개(약 700g)</span>
+  <table>
+    <tr><td>절이기</td><td>굵은소금 1큰술 · 설탕 1/2큰술</td></tr>
+    <tr><td>양념</td><td>고춧가루 3큰술 · <b>사이다 4큰술</b></td></tr>
+    <tr><td></td><td>멸치액젓 1과 1/2큰술 · 새우젓 1/2큰술</td></tr>
+    <tr><td></td><td>다진 마늘 1큰술 · 다진 생강 1/3작은술</td></tr>
+    <tr><td>마무리</td><td>쪽파 3~4대</td></tr>
+  </table>
+  <p class="sub" style="font-size:26px">없으면? 새우젓 → 액젓 1/2큰술 더 · 사이다 → 설탕 1큰술</p>
+</section>
+
+<!-- 3. 썰기 -->
+<section class="card" id="c3">
+  <span class="tag">1단계 · 무 썰기</span>
+  <h2>사방 <em style="font-style:normal;color:#e8432e">2cm</em> 깍둑썰기</h2>
+  <p class="sub">너무 작으면 금방 물러져요</p>
+  <div class="cube white" style="left:560px;top:330px;width:240px;height:240px;border-radius:30px"></div>
+  <div class="ruler" style="left:560px;top:610px;width:240px"></div>
+  <div class="rtxt" style="left:630px;top:630px">2cm</div>
+  <div class="ruler" style="left:840px;top:330px;width:6px;height:240px"></div>
+  <div class="rtxt" style="left:870px;top:420px">2cm</div>
+  <div class="cube white" style="left:180px;top:420px;width:120px;height:120px"></div>
+  <div class="cube white" style="left:320px;top:470px;width:120px;height:120px;transform:rotate(10deg)"></div>
+</section>
+
+<!-- 4. 절이기 -->
+<section class="card" id="c4">
+  <span class="tag">2단계 · 절이기</span>
+  <div class="steps">
+    <div class="step"><b>소금 + 설탕</b><span>굵은소금 1큰술<br>설탕 1/2큰술</span></div>
+    <div class="step"><b>30분</b><span>중간에 한 번<br>뒤적이기</span></div>
+    <div class="step"><b>휘어지면 OK</b><span>부러지지 않고<br>살짝 휘면 완성</span></div>
+  </div>
+  <p class="sub" style="margin-top:60px">생긴 물은 버리고, <b>헹구지 않아요</b><br>(너무 짜면 한 번만 살짝 헹구기)</p>
+</section>
+
+<!-- 5. 익히기 -->
+<section class="card" id="c5">
+  <span class="tag">5단계 · 맛있게 익히기</span>
+  <div class="steps">
+    <div class="step"><b>꾹꾹 담기</b><span>밀폐 용기에<br>공기 빼며 눌러 담기</span></div>
+    <div class="step"><b>실온 반나절~하루</b><span>살짝 새콤해질<br>때까지</span></div>
+    <div class="step"><b>냉장 보관</b><span>2~3일째부터<br>맛이 들어요</span></div>
+  </div>
+  <p class="sub" style="margin-top:60px">냉장 1~2주 안에 먹기 · 시어지면 볶음밥·찌개로!</p>
+</section>
+
+<script>
+  const n = (location.hash || "#1").slice(1);
+  document.getElementById("c" + n).classList.add("on");
+</script>
+</body>
+</html>

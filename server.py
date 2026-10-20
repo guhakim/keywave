@@ -872,6 +872,14 @@ class Handler(SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(b"ok")
             return False
+        if DEPLOYED and not PASSWORD:  # 비밀번호 없이 인터넷에 열리면 누구나 열쇠 사용량을 쓰게 되므로 막아 둡니다
+            body = "KEYWAVE_PASSWORD 환경 변수를 넣어야 열려요 (Vercel → Settings → Environment Variables)".encode()
+            self.send_response(503)
+            self.send_header("Content-Type", "text/plain; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return False
         if self.authorized():
             return True
         body = "비밀번호가 필요해요".encode()
@@ -911,7 +919,7 @@ class Handler(SimpleHTTPRequestHandler):
         if not same:
             return self.send_json(403, {"error": "KEYWAVE 화면에서만 할 수 있어요."})
         if path == "/api/setup" and DEPLOYED:
-            return self.send_json(403, {"error": "인터넷에 올린 KEYWAVE에서는 화면에서 열쇠를 저장할 수 없어요. 호스팅 서비스(Render)의 Environment에 넣어 주세요."})
+            return self.send_json(403, {"error": "인터넷에 올린 KEYWAVE에서는 화면에서 열쇠를 저장할 수 없어요. Vercel → Settings → Environment Variables에 넣어 주세요."})
         try:
             body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0)) or 0) or b"{}")
             if not isinstance(body, dict):

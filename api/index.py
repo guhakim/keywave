@@ -6,4 +6,8 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.environ.setdefault("KEYWAVE_DEPLOY", "1")
 
-from server import Handler as handler  # noqa: E402,F401  (Vercel은 'handler'라는 이름을 찾습니다)
+from server import Handler  # noqa: E402
+
+
+class handler(Handler):  # Vercel은 파일 안에 'handler'가 글자 그대로 있어야 찾습니다
+    pass

@@ -275,8 +275,8 @@ footer{border-top:1px solid var(--line);padding:50px 0 30px;color:var(--muted);f
 </div></nav>
 
 <header class="hero"><div class="wrap">
-  <h1>AI가 골라주는 블로그 글감,<br><b>데이터로 확인하세요</b></h1>
-  <p>네이버 <strong>검색량·광고 경쟁·12개월 추이</strong>와 <strong>사이트별 연관 키워드</strong>를 한눈에 보고,<br><strong>🤖 AI 인사이트</strong>로 글로 쓸 <strong>콘텐츠 주제</strong>까지 추천받으세요.</p>
+  <h1>AI 시대의 검색 마케팅을 위한<br><b>믿을 수 있는 키워드 분석 툴</b></h1>
+  <p><strong>AI 추천</strong>을 실제 <strong>네이버 데이터</strong>와 자동으로 대조해,<br>숫자로 확인된 <strong>키워드</strong>와 <strong>콘텐츠 주제</strong>만 골라보세요.</p>
   <form class="search" onsubmit="analyze(event)">
     <select id="engine" aria-label="검색 사이트">
       <option value="검색1">NAVER</option>
@@ -998,7 +998,7 @@ const stepData=[
     ["요일별 검색 비율",async()=>{await analyzeThen("#td"); flashTo(await waitFor(()=>document.querySelector('#tdOut svg[aria-label^="요일"]')?.parentElement));}]], "months"],
   // AI는 쓸 때마다 비용(또는 무료 한도)이 들어서, ▶ 해보기는 실행 버튼이 있는 곳까지만 데려가요
   // (위쪽 사이트별 키워드가 늦게 채워지며 AI 상자를 밀어내므로, 다 불러온 뒤 이동)
-  ["AI 분석 단계","모은 데이터를 근거로 AI가 글감과 글 구성을 추천합니다. (Gemini 또는 Claude 키 필요)",[
+  ["AI 분석 단계","모은 데이터를 근거로 AI가 글 주제와 글 구성을 추천합니다. (Gemini 또는 Claude 키 필요)",[
     ["🤖 AI 인사이트 (판정 · 근거 · 글 주제 · 글 구성)",()=>aiThen()],
     ["AI로 키워드 고르기 (키워드 확장 결과에서 순위 추천)",async()=>{exSeeds.value=exWord(); await runExpand(); flashTo(document.getElementById("exAI"));}],
     ["🔎 자동 검증 (AI 답의 숫자·키워드를 데이터와 대조)",()=>aiThen()]], "ai"]

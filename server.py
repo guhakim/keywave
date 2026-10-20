@@ -482,7 +482,9 @@ def ai_friendly(e):
 
 GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta"
 GEMINI_MODEL = "gemini-3.8-flash"   # 무료 사용량이 있는 모델 (ai.google.dev 요금표 기준)
-GEMINI_FALLBACK = "gemini-2.5-flash"  # GEMINI_MODEL이 붐빌 때(503) 대신 쓰는 모델
+# GEMINI_MODEL이 붐비거나(503) 무료 한도를 다 썼거나(429) 답이 늦을 때 차례로 대신 쓰는 모델.
+# 무료 한도는 모델마다 따로라서, 한 모델 한도를 다 써도 다른 모델은 쓸 수 있어요.
+GEMINI_FALLBACKS = ["gemini-2.5-flash", "gemini-flash-lite-latest"]
 
 
 def gemini_friendly(e):
@@ -495,7 +497,7 @@ def gemini_friendly(e):
     if code in (400, 403) and ("API key" in body or "API_KEY" in body):
         return "Gemini 열쇠가 틀렸어요 — 🔑 열쇠 넣기에서 다시 저장해 주세요"
     if code == 503:
-        return f"Gemini가 지금 붐벼서 {GEMINI_MODEL}·{GEMINI_FALLBACK} 둘 다 답을 못 받았어요. 몇 분 뒤 다시 해 주세요 (열쇠 문제가 아니에요)"
+        return "Gemini가 지금 붐벼서 답을 못 받았어요. 몇 분 뒤 다시 해 주세요 (열쇠 문제가 아니에요)"
     if code == 429:
         return "오늘(또는 지금 1분) 무료 사용량을 다 썼어요. 잠시 뒤나 내일 다시 해 주세요"
     if code == 404:
@@ -535,18 +537,32 @@ def ask_gemini(system, data, schema):
         "contents": [{"role": "user", "parts": [{"text": "[데이터]\n" + json.dumps(data, ensure_ascii=False)}]}],
         "generationConfig": {"responseMimeType": "application/json", "responseSchema": gemini_schema(schema)},
     }
-    # 503(잠깐 붐빔)이면 5초 쉬고 한 번 더 묻고, 그래도 붐비면 GEMINI_FALLBACK 모델로 넘어갑니다
-    tries = [(GEMINI_MODEL, 5), (GEMINI_MODEL, 0), (GEMINI_FALLBACK, 5), (GEMINI_FALLBACK, None)]
-    for model, wait in tries:
-        try:
-            res = http_json(f"{GEMINI_BASE}/models/{model}:generateContent",
-                            {"x-goog-api-key": GEMINI_KEY, "Content-Type": "application/json"}, body, timeout=120)  # AI 답은 오래 걸릴 수 있어요
+    # 모델을 차례로 써 봅니다. 붐빔(503)은 5초 쉬고 한 번 더, 한도 초과(429)·응답 늦음·서버 오류는 바로 다음 모델로.
+    # 열쇠가 틀린 것처럼 모델을 바꿔도 안 되는 오류는 바로 알려 줍니다.
+    models, skipped, res = [GEMINI_MODEL] + GEMINI_FALLBACKS, [], None
+    REASON = {429: "무료 한도 초과", 503: "붐빔", 500: "서버 오류", 504: "응답 늦음"}
+    for i, model in enumerate(models):
+        for attempt in range(2):
+            try:
+                res = http_json(f"{GEMINI_BASE}/models/{model}:generateContent",
+                                {"x-goog-api-key": GEMINI_KEY, "Content-Type": "application/json"}, body,
+                                timeout=120 if i == len(models) - 1 else 75)  # AI 답은 오래 걸릴 수 있어요
+                break
+            except Exception as e:
+                code = getattr(e, "code", None)
+                if code == 503 and attempt == 0:
+                    time.sleep(5)
+                    continue
+                if code in REASON or "timed out" in str(e):
+                    skipped.append(f"{model} {REASON.get(code, '응답 늦음')}")
+                    break
+                raise AIError(gemini_friendly(e))
+        if res is not None:
             break
-        except Exception as e:
-            if getattr(e, "code", None) == 503 and wait is not None:
-                time.sleep(wait)
-                continue
-            raise AIError(gemini_friendly(e))
+    if res is None:
+        if all("한도" in x for x in skipped):
+            raise AIError(f"Gemini 무료 사용량을 모든 모델({', '.join(models)})에서 다 썼어요. 잠시 뒤나 내일 다시 해 주세요")
+        raise AIError(f"Gemini 모델을 모두 써 봤지만 답을 못 받았어요 ({' · '.join(skipped)}). 몇 분 뒤 다시 해 주세요 (열쇠 문제가 아니에요)")
     cand = (res.get("candidates") or [{}])[0]
     if cand.get("finishReason") in ("SAFETY", "PROHIBITED_CONTENT", "BLOCKLIST"):
         raise AIError("AI가 이 요청에 대한 답을 거절했어요")
@@ -556,7 +572,7 @@ def ask_gemini(system, data, schema):
         "input": u.get("promptTokenCount", 0),
         "output": u.get("candidatesTokenCount", 0) + u.get("thoughtsTokenCount", 0),
         "cost_usd": 0, "note": "무료 사용량 안에서는 0원",
-        "fallback": model != GEMINI_MODEL and f"{GEMINI_MODEL}이(가) 붐벼서 {model}로 답했어요"}
+        "fallback": bool(skipped) and f"{' · '.join(skipped)} → {model}로 답했어요"}
 
 
 def ask_claude(system, data, schema):

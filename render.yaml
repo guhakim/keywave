@@ -1,0 +1,33 @@
+# Render(render.com)에 KEYWAVE를 올리는 설정입니다.
+# Render 대시보드 → New → Blueprint → 이 GitHub 저장소를 고르면 아래대로 만들어져요.
+# 열쇠(sync: false)는 Render가 처음 만들 때 화면에서 직접 넣으라고 물어봐요. 저장소에는 절대 들어가지 않아요.
+services:
+  - type: web
+    name: keywave
+    runtime: python
+    plan: free            # 무료: 15분 동안 아무도 안 쓰면 잠들고, 다음 접속 때 깨어나는 데 1분쯤 걸려요
+    region: singapore     # 한국과 가장 가까운 지역
+    buildCommand: pip install -r requirements.txt
+    startCommand: python server.py
+    healthCheckPath: /healthz
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+      - key: KEYWAVE_DEPLOY
+        value: "1"
+      - key: KEYWAVE_PASSWORD   # 사이트에 들어갈 때 묻는 비밀번호
+        sync: false
+      - key: NAVER_AD_API_KEY
+        sync: false
+      - key: NAVER_AD_SECRET_KEY
+        sync: false
+      - key: NAVER_AD_CUSTOMER_ID
+        sync: false
+      - key: NAVER_HUB_CLIENT_ID
+        sync: false
+      - key: NAVER_HUB_CLIENT_SECRET
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false

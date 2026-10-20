@@ -24,6 +24,26 @@ python3 server.py
 - `.venv`가 있으면 그 파이썬을 씁니다(AI 인사이트용 패키지 포함).
 - 포트는 기본 `8765`이고, 환경변수 `PORT`로 바꿀 수 있습니다.
 
+## 인터넷에 올리기 (Render)
+
+내 컴퓨터에서 켜는 KEYWAVE(`localhost`)는 컴퓨터를 끄면 같이 꺼집니다.
+[Render](https://render.com)에 올리면 컴퓨터가 꺼져 있어도 휴대폰·다른 컴퓨터에서 `https://….onrender.com` 주소로 열립니다.
+저장소에 들어 있는 `render.yaml`이 설정을 대신 해 줍니다.
+
+1. render.com에 **GitHub 계정으로 가입**합니다.
+2. 대시보드 → **New → Blueprint** → 저장소 `guhakim/keywave`를 고릅니다.
+3. Render가 아래 값을 물어봅니다. 비어 있는 칸은 그냥 두면 됩니다.
+   - `KEYWAVE_PASSWORD`: 사이트에 들어갈 때 쓸 **비밀번호를 새로 정해서** 넣으세요. (로그인 창의 아이디 칸은 아무거나)
+   - `NAVER_AD_*`, `NAVER_HUB_*`, `GEMINI_API_KEY`, `ANTHROPIC_API_KEY`: 내 컴퓨터 `.env`에 있는 값을 그대로 넣으세요.
+4. **Apply**를 누르면 몇 분 뒤 주소가 생깁니다.
+
+알아 둘 점
+- **무료 요금제**는 15분 동안 아무도 안 쓰면 잠들고, 다음에 열 때 깨어나는 데 1분쯤 걸립니다.
+- 열쇠는 Render의 **Environment**에서만 넣고 바꿉니다. 인터넷에 올린 KEYWAVE에서는 🔑 열쇠 넣기 화면이 저장을 막습니다.
+- `KEYWAVE_PASSWORD`를 비워 두면 주소를 아는 누구나 들어와 내 네이버·Gemini 사용량을 쓸 수 있으니 꼭 넣으세요.
+- Render 서버는 싱가포르에 있어서, 자동완성 결과가 한국에서 볼 때와 조금 다를 수 있습니다.
+- GitHub `main`에 올릴 때마다 Render가 자동으로 새로 배포합니다.
+
 ## 열쇠(API 키) 넣기
 
 <http://localhost:8765/setup.html>에서 붙여넣으면 같은 폴더의 `.env`에 저장됩니다.
@@ -164,6 +184,8 @@ keywave/
 ├── index.html             # 메인 화면 (키워드 분석 · 확장 · 활용 방법 · 트렌드)
 ├── setup.html             # 열쇠(API 키) 넣기 화면
 ├── .env.example           # 키 템플릿 (.env로 복사해서 사용)
+├── requirements.txt       # 배포용 패키지 목록 (AI 인사이트 Claude용)
+├── render.yaml            # Render에 올리는 설정 (열쇠 값은 들어 있지 않음)
 ├── docs/images/           # README용 워크플로 화면 기록
 └── posts/                 # KEYWAVE 데이터로 기획한 블로그 글
     ├── kkakdugi/          # 기획서.md · 본문.html · cards.html · images/

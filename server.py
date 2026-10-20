@@ -79,12 +79,19 @@ def configure():
 
 configure()
 
+# ---------- 인터넷에 올렸을 때(배포) ----------
+# KEYWAVE_DEPLOY가 있으면 배포 모드: 모든 주소에서 접속을 받고, 열쇠는 호스팅 서비스의 환경 변수로만 넣습니다
+# (화면에서 열쇠 저장 막음 — 서버 파일은 다시 배포하면 지워지고, 남이 열쇠를 바꾸면 안 되니까요).
+# KEYWAVE_PASSWORD가 있으면 모든 화면·API에 비밀번호를 묻습니다 (아이디 칸은 아무거나).
+DEPLOYED = bool(os.getenv("KEYWAVE_DEPLOY"))
+PASSWORD = os.getenv("KEYWAVE_PASSWORD", "")
+
 
 def key_status():
     """어떤 열쇠가 들어 있는지만 알려줍니다 (열쇠 값은 절대 돌려주지 않음)."""
     return {"ad": bool(AD_KEY and AD_SECRET and AD_CUSTOMER), "open": OPEN_API["name"] if OPEN_API else None,
             "ai": bool(AI_KEY or GEMINI_KEY), "ai_sdk": ai_sdk_ready(),
-            "ai_providers": [p for p, k in (("gemini", GEMINI_KEY), ("claude", AI_KEY)) if k]}
+            "ai_providers": [p for p, k in (("gemini", GEMINI_KEY), ("claude", AI_KEY)) if k], "deployed": DEPLOYED}
 
 
 def save_and_test(body):
@@ -844,6 +851,42 @@ class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *a, **kw):
         super().__init__(*a, directory=ROOT, **kw)
 
+    def authorized(self):
+        """KEYWAVE_PASSWORD가 있을 때 브라우저 기본 로그인 창(Basic 인증)으로 받은 비밀번호를 확인합니다."""
+        if not PASSWORD:
+            return True
+        auth = self.headers.get("Authorization", "")
+        if not auth.startswith("Basic "):
+            return False
+        try:
+            pw = base64.b64decode(auth[6:]).decode("utf-8").split(":", 1)[1]
+        except (ValueError, IndexError):
+            return False
+        return hmac.compare_digest(pw.encode(), PASSWORD.encode())
+
+    def guard(self):
+        """비밀번호가 맞으면 True. 틀리면 로그인 창을 띄우고 False. /healthz(호스팅 상태 확인)는 그냥 통과."""
+        if urllib.parse.urlparse(self.path).path == "/healthz":
+            self.send_response(200)
+            self.send_header("Content-Length", "2")
+            self.end_headers()
+            self.wfile.write(b"ok")
+            return False
+        if self.authorized():
+            return True
+        body = "비밀번호가 필요해요".encode()
+        self.send_response(401)
+        self.send_header("WWW-Authenticate", 'Basic realm="KEYWAVE", charset="UTF-8"')
+        self.send_header("Content-Type", "text/plain; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+        return False
+
+    def do_HEAD(self):
+        if self.guard():
+            super().do_HEAD()
+
     def send_json(self, status, body):
         data = json.dumps(body, ensure_ascii=False).encode()
         self.send_response(status)
@@ -853,13 +896,22 @@ class Handler(SimpleHTTPRequestHandler):
         self.wfile.write(data)
 
     def do_POST(self):
+        if not self.guard():
+            return
         path = urllib.parse.urlparse(self.path).path
         if path not in ("/api/setup", "/api/ai_expand"):
             return self.send_error(404)
-        # 다른 웹사이트가 몰래 열쇠를 바꾸지 못하도록, 이 컴퓨터의 KEYWAVE 화면에서 온 요청만 받습니다
+        # 다른 웹사이트가 몰래 요청하지 못하도록, KEYWAVE 화면에서 온 요청만 받습니다
         port = self.server.server_address[1]
-        if self.headers.get("Origin") not in (f"http://localhost:{port}", f"http://127.0.0.1:{port}"):
+        if DEPLOYED:  # 배포: 접속한 주소(Host)와 같은 곳에서 온 요청만
+            origin = urllib.parse.urlparse(self.headers.get("Origin") or "").netloc
+            same = bool(origin) and origin == self.headers.get("Host")
+        else:         # 내 컴퓨터: localhost 화면에서 온 요청만
+            same = self.headers.get("Origin") in (f"http://localhost:{port}", f"http://127.0.0.1:{port}")
+        if not same:
             return self.send_json(403, {"error": "KEYWAVE 화면에서만 할 수 있어요."})
+        if path == "/api/setup" and DEPLOYED:
+            return self.send_json(403, {"error": "인터넷에 올린 KEYWAVE에서는 화면에서 열쇠를 저장할 수 없어요. 호스팅 서비스(Render)의 Environment에 넣어 주세요."})
         try:
             body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0)) or 0) or b"{}")
             if not isinstance(body, dict):
@@ -877,6 +929,8 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_json(500, {"error": f"저장 실패: {e}"})
 
     def do_GET(self):
+        if not self.guard():
+            return
         url = urllib.parse.urlparse(self.path)
         if url.path == "/api/keys":
             return self.send_json(200, key_status())
@@ -924,5 +978,8 @@ if __name__ == "__main__":
     port = int(os.getenv("PORT", "8765"))
     mode = ("검색광고 키 있음 — 검색량 실제 데이터" if AD_KEY and AD_SECRET and AD_CUSTOMER else "검색광고 키 없음 — 검색량은 비어 있음") + \
            (f" / {OPEN_API['name']} 키 있음" if OPEN_API else " / HUB 키 없음 — 발행량·그래프 비어 있음")
-    print(f"KEYWAVE http://localhost:{port}  [{mode}]", flush=True)
-    ThreadingHTTPServer(("127.0.0.1", port), Handler).serve_forever()
+    host = os.getenv("HOST", "0.0.0.0" if DEPLOYED else "127.0.0.1")
+    if DEPLOYED:
+        mode += " / 배포 모드" + (" · 비밀번호 있음" if PASSWORD else " · ⚠️ 비밀번호 없음 (누구나 열쇠 사용량을 쓸 수 있어요)")
+    print(f"KEYWAVE http://{'localhost' if host == '127.0.0.1' else host}:{port}  [{mode}]", flush=True)
+    ThreadingHTTPServer((host, port), Handler).serve_forever()

@@ -70,6 +70,8 @@ async function refresh(){
   try{
     const k=await (await fetch("/api/keys")).json();
     keyStatus.innerHTML=`지금 상태: 검색광고 <b>${k.ad?"✅ 들어 있음":"❌ 없음"}</b> · 발행량/그래프 <b>${k.open?"✅ "+k.open:"❌ 없음"}</b> · AI 인사이트 <b>${k.ai_providers?.length?"✅ "+k.ai_providers.map(p=>({gemini:"Gemini",claude:"Claude"})[p]).join(" · "):"❌ 없음"}</b>${k.ai_sdk===false?" (AI 패키지 없음 — 'KEYWAVE 켜기'로 서버를 켜 주세요)":""}`;
+    // 인터넷에 올린 KEYWAVE에서는 열쇠를 화면에서 저장하지 않아요 (호스팅 서비스 환경 변수로 넣음)
+    if(k.deployed){ f.style.display="none"; keyStatus.insertAdjacentHTML("afterend",`<p class="status">🌐 인터넷에 올린 KEYWAVE예요. 열쇠는 이 화면이 아니라 <b>Render → 서비스 → Environment</b>에서 넣어요. 넣은 뒤 저장하면 자동으로 다시 시작돼요.</p>`); }
   }catch{keyStatus.textContent="서버에 연결할 수 없어요. KEYWAVE 서버가 켜져 있는지 확인해 주세요."}
 }
 f.onsubmit=async e=>{

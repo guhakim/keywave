@@ -82,9 +82,7 @@ configure()
 # ---------- 인터넷에 올렸을 때(배포) ----------
 # KEYWAVE_DEPLOY가 있으면 배포 모드: 모든 주소에서 접속을 받고, 열쇠는 호스팅 서비스의 환경 변수로만 넣습니다
 # (화면에서 열쇠 저장 막음 — 서버 파일은 다시 배포하면 지워지고, 남이 열쇠를 바꾸면 안 되니까요).
-# KEYWAVE_PASSWORD가 있으면 모든 화면·API에 비밀번호를 묻습니다 (아이디 칸은 아무거나).
 DEPLOYED = bool(os.getenv("KEYWAVE_DEPLOY"))
-PASSWORD = os.getenv("KEYWAVE_PASSWORD", "")
 
 
 def key_status():
@@ -668,7 +666,23 @@ def kw_norm(w):
     return str(w).replace(" ", "").lower()
 
 
-def check_insight(x, data, allowed_words):
+# 경쟁·붐빔을 판단하는 말. 블로그 글 수를 모르는 키워드에 이런 말을 하면 근거 없는 판단입니다.
+COMPETE_RE = re.compile(r"경쟁|붐비|붐빕|포화|레드오션|블루오션|유리|공략하기 좋")
+UNKNOWN_RE = re.compile(r"확인 필요|확인되지 않|알 수 없|모르|판단하지 않|판단할 수 없")
+
+
+def compete_claims(*texts):
+    """'글 수 확인 필요'처럼 모른다고 한 말은 빼고, 경쟁을 판단한 말만 돌려줍니다.
+    "알 수 없지만, …경쟁이 적을 수 있다"처럼 한 문장 안에서 말을 바꾸는 경우를 잡으려고 쉼표·'지만' 단위로 나눠 봅니다."""
+    out = []
+    for t in texts:
+        for sent in re.split(r"(?<=[.!?。])\s+|\n|,|，|(?<=지만)\s", t or ""):
+            if COMPETE_RE.search(sent) and not UNKNOWN_RE.search(sent):
+                out.append(sent.strip())
+    return out
+
+
+def check_insight(x, data, allowed_words, known_docs=()):
     """AI 인사이트 답을 [데이터]와 대조: 없는 키워드는 묶음에서 빼고, 없는 숫자·키워드는 표시합니다."""
     nums, words = data_numbers(data), {kw_norm(w) for w in allowed_words}
     issues = []
@@ -684,11 +698,14 @@ def check_insight(x, data, allowed_words):
         drop = [w for w in c["keywords"] if kw_norm(w) not in words]
         issues.extend({"where": f"주제 묶음 · {c['name']}", "type": "키워드", "value": w, "removed": True} for w in drop)
         c["keywords"] = [w for w in c["keywords"] if kw_norm(w) in words]
+    known = {kw_norm(w) for w in known_docs}
     for t in x["topics"]:
         t["unverified"] = nums_in(f"글 주제 · {t['title']}", t["why"])
         t["keyword_ok"] = kw_norm(t["target_keyword"]) in words
         if not t["keyword_ok"]:
             issues.append({"where": f"글 주제 · {t['title']}", "type": "키워드", "value": t["target_keyword"]})
+        t["no_docs_claim"] = [] if kw_norm(t["target_keyword"]) in known else compete_claims(t["why"])
+        issues.extend({"where": f"글 주제 · {t['target_keyword']}", "type": "글 수 모르는데 경쟁 판단", "value": c} for c in t["no_docs_claim"])
     return {"ok": not issues, "issues": issues}
 
 
@@ -696,9 +713,12 @@ def check_expand(x, data):
     """키워드 확장 AI 답을 보낸 목록과 대조합니다."""
     nums = data_numbers(data)
     words = {kw_norm(r["키워드"]) for r in data["키워드목록"]} | {kw_norm(w) for w in data["시드키워드"]}
+    docs = {kw_norm(r["키워드"]): r["블로그글"] for r in data["키워드목록"]}
     issues = []
     for p in x["picks"]:
         p["unverified"] = unknown_numbers(p["evidence"], nums) + unknown_numbers(p["why"], nums)
+        p["no_docs_claim"] = [] if docs.get(kw_norm(p["keyword"])) is not None else compete_claims(p["evidence"], p["why"])
+        issues.extend({"where": f"추천 {p['rank']}위 · {p['keyword']}", "type": "글 수 모르는데 경쟁 판단", "value": c} for c in p["no_docs_claim"])
         issues.extend({"where": f"추천 {p['rank']}위 · {p['keyword']}", "type": "숫자", "value": b} for b in p["unverified"])
         p["keyword_ok"] = kw_norm(p["keyword"]) in words
         if not p["keyword_ok"]:
@@ -738,7 +758,7 @@ def ai_insight(keyword, provider=""):
     a = analyze(keyword)
     sites = suggest_all(keyword)
     vol = lambda x: (x["pc"] if isinstance(x["pc"], int) else 0) + (x["mobile"] if isinstance(x["mobile"], int) else 0)
-    top_rel = [x["keyword"] for x in sorted(a["related"], key=vol, reverse=True)[:15]]
+    top_rel = [x["keyword"] for x in sorted(a["related"], key=vol, reverse=True)]  # 보여 주는 연관 키워드 20개 모두
     docs = blog_totals(top_rel) if OPEN_API else {}
     rel_docs = [{"키워드": k, "블로그누적발행량": docs.get(k),
                  "발행량_나누기_월검색량": round(docs[k] / vol(r), 1) if docs.get(k) is not None and vol(r) else None}
@@ -754,7 +774,7 @@ def ai_insight(keyword, provider=""):
         "연관키워드_검색광고_키워드포함_검색량순20": a["related"],
         "연관키워드_개수": a["related_info"] and {"검색광고_전체": a["related_info"]["total"],
                                              "키워드포함": a["related_info"]["matched"]},
-        # 검색량 상위 15개 연관 키워드의 블로그 누적 글 수 — 키워드끼리 경쟁을 비교할 수 있게
+        # 연관 키워드(최대 20개)의 블로그 누적 글 수 — 키워드끼리 경쟁을 비교할 수 있게
         "연관키워드_블로그누적발행량": rel_docs,
         "사이트별_자동완성키워드": {k: v for k, v in sites.items() if v},
         "못가져온_데이터": a["errors"],
@@ -764,7 +784,8 @@ def ai_insight(keyword, provider=""):
     except AIError as e:
         return 200, {"error_note": f"AI 인사이트: {e}"}
     allowed = [keyword] + [r["keyword"] for r in a["related"]] + [w for v in sites.values() if v for w in v]
-    check = check_insight(result, data, allowed)
+    known_docs = ([keyword] if a["docs"] is not None else []) + [k for k, n in docs.items() if n is not None]
+    check = check_insight(result, data, allowed, known_docs)
     out = {"keyword": keyword, "provider": provider, "insight": result, "check": check, "model": model, "usage": usage}
     _ai_cache[(provider, keyword)] = (time.time(), out)
     return 200, out
@@ -821,11 +842,15 @@ def ai_expand(body):
         return 200, {"error_note": f"AI 추천: {e}"}
     seeds = [str(x)[:50] for x in body.get("seeds", [])][:5]
     num = lambda v: v if isinstance(v, (int, float)) else None
+    src = [r for r in body.get("rows", [])[:80] if isinstance(r, dict) and str(r.get("keyword", "")).strip()]
+    # 화면은 블로그 글 수를 위쪽 일부만 불러와서, AI에게 보내기 전에 빈 칸을 모두 채웁니다.
+    # (글 수를 모르면 AI가 경쟁을 짐작해 버려서 — 실제로 '경쟁이 적다'던 키워드가 가장 붐볐어요)
+    missing = [str(r["keyword"])[:60] for r in src if num(r.get("docs")) is None]
+    filled = blog_totals(missing, limit=80) if missing and OPEN_API else {}
     rows = []
-    for r in body.get("rows", [])[:80]:
-        if not isinstance(r, dict) or not str(r.get("keyword", "")).strip():
-            continue
-        pc, mo, docs = r.get("pc"), r.get("mobile"), num(r.get("docs"))
+    for r in src:
+        pc, mo = r.get("pc"), r.get("mobile")
+        docs = num(r.get("docs")) if num(r.get("docs")) is not None else filled.get(str(r["keyword"])[:60])
         tot = (pc if isinstance(pc, int) else 0) + (mo if isinstance(mo, int) else 0)
         rows.append({"키워드": str(r["keyword"])[:60],
                      "월검색량": tot if isinstance(pc, int) or isinstance(mo, int) else None,
@@ -842,7 +867,8 @@ def ai_expand(body):
         result, model, usage = call_ai(provider, EXPAND_SYSTEM, data, EXPAND_SCHEMA, valid_expand)
     except AIError as e:
         return 200, {"error_note": f"AI 추천: {e}"}
-    out = {"provider": provider, "result": result, "check": check_expand(result, data), "model": model, "usage": usage, "sent": len(rows)}
+    out = {"provider": provider, "result": result, "check": check_expand(result, data), "model": model, "usage": usage, "sent": len(rows),
+           "docs_filled": {k: n for k, n in filled.items() if n is not None}}
     _ai_cache[key] = (time.time(), out)
     return 200, out
 
@@ -851,45 +877,15 @@ class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *a, **kw):
         super().__init__(*a, directory=ROOT, **kw)
 
-    def authorized(self):
-        """KEYWAVE_PASSWORD가 있을 때 브라우저 기본 로그인 창(Basic 인증)으로 받은 비밀번호를 확인합니다."""
-        if not PASSWORD:
-            return True
-        auth = self.headers.get("Authorization", "")
-        if not auth.startswith("Basic "):
-            return False
-        try:
-            pw = base64.b64decode(auth[6:]).decode("utf-8").split(":", 1)[1]
-        except (ValueError, IndexError):
-            return False
-        return hmac.compare_digest(pw.encode(), PASSWORD.encode())
-
     def guard(self):
-        """비밀번호가 맞으면 True. 틀리면 로그인 창을 띄우고 False. /healthz(호스팅 상태 확인)는 그냥 통과."""
+        """/healthz(호스팅 상태 확인)는 통과, 나머지는 모두 허용합니다."""
         if urllib.parse.urlparse(self.path).path == "/healthz":
             self.send_response(200)
             self.send_header("Content-Length", "2")
             self.end_headers()
             self.wfile.write(b"ok")
             return False
-        if DEPLOYED and not PASSWORD:  # 비밀번호 없이 인터넷에 열리면 누구나 열쇠 사용량을 쓰게 되므로 막아 둡니다
-            body = "KEYWAVE_PASSWORD 환경 변수를 넣어야 열려요 (Vercel → Settings → Environment Variables)".encode()
-            self.send_response(503)
-            self.send_header("Content-Type", "text/plain; charset=utf-8")
-            self.send_header("Content-Length", str(len(body)))
-            self.end_headers()
-            self.wfile.write(body)
-            return False
-        if self.authorized():
-            return True
-        body = "비밀번호가 필요해요".encode()
-        self.send_response(401)
-        self.send_header("WWW-Authenticate", 'Basic realm="KEYWAVE", charset="UTF-8"')
-        self.send_header("Content-Type", "text/plain; charset=utf-8")
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
-        return False
+        return True
 
     def do_HEAD(self):
         if self.guard():
@@ -988,6 +984,6 @@ if __name__ == "__main__":
            (f" / {OPEN_API['name']} 키 있음" if OPEN_API else " / HUB 키 없음 — 발행량·그래프 비어 있음")
     host = os.getenv("HOST", "0.0.0.0" if DEPLOYED else "127.0.0.1")
     if DEPLOYED:
-        mode += " / 배포 모드" + (" · 비밀번호 있음" if PASSWORD else " · ⚠️ 비밀번호 없음 (누구나 열쇠 사용량을 쓸 수 있어요)")
+        mode += " / 배포 모드"
     print(f"KEYWAVE http://{'localhost' if host == '127.0.0.1' else host}:{port}  [{mode}]", flush=True)
     ThreadingHTTPServer((host, port), Handler).serve_forever()

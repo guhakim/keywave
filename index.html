@@ -260,7 +260,21 @@ footer{border-top:1px solid var(--line);padding:50px 0 30px;color:var(--muted);f
   .rank-row{grid-template-columns:36px 1fr 70px;padding:12px 14px}
   .rank-row .hide{display:none}
   }
+
+/* ── AD (Kakao AdFit) ── 좌우 광고는 본문(1148px)과 겹치지 않는 넓은 화면에서만 나온다 */
+.ad-rail{position:fixed;top:80px;width:160px;z-index:5}
+.ad-rail-left{left:calc(50% - 814px)}
+.ad-rail-right{right:calc(50% - 814px)}
+/* 아래 광고: 한 줄에 가운데 정렬, 광고 사이 32px. 위아래로 구분선 */
+.ad-slot{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:32px;padding:24px 16px;border-top:1px solid var(--line)}
+/* 광고 칸마다 제 크기를 고정한다. 안 그러면 320x100이 화면 전체 폭으로 늘어나 흰 띠가 된다 */
+.ad-box{flex:0 0 auto;max-width:100%}
+/* 아래 300x250 광고: 300px 칸을 최대 3개씩 줄 맞춰 가운데 정렬 (3x5=15). 좁은 화면은 2개, 1개로 줄어든다 */
+.ad-grid{display:grid;grid-template-columns:repeat(auto-fill,300px);justify-content:center;gap:24px 32px;max-width:calc(300px*3 + 32px*2 + 32px);margin:0 auto;padding:32px 16px;border-top:1px solid var(--line)}
+.ad-300{width:300px;height:250px}
 </style>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3217274047131813"
+     crossorigin="anonymous"></script>
 </head>
 <body>
 
@@ -349,6 +363,135 @@ footer{border-top:1px solid var(--line);padding:50px 0 30px;color:var(--muted);f
   <div class="sec-title"><h2>트렌드 🔥</h2><p>지금 한국에서 검색이 급증한 키워드와 관련 뉴스를 한눈에 확인하세요.</p></div>
   <div class="trends" id="trends"></div>
 </div></section>
+
+<!-- AD (Kakao AdFit): 화면에 안 맞는 광고는 스크립트가 읽기 전에 지워서 호출하지 않는다 -->
+<div class="ad-rail ad-rail-left">
+  <ins class="kakao_ad_area" style="display:none;"
+       data-ad-unit="DAN-tBD1keH0D7ybse7p"
+       data-ad-width="160"
+       data-ad-height="600"></ins>
+</div>
+<div class="ad-rail ad-rail-right">
+  <ins class="kakao_ad_area" style="display:none;"
+       data-ad-unit="DAN-nZUqz9oa0hbi2j1u"
+       data-ad-width="160"
+       data-ad-height="600"></ins>
+</div>
+<!-- 아래 300x250 광고 15칸: 3개씩 5줄로 가운데 정렬.
+     AdFit은 광고마다 다른 광고단위 ID가 필요하다. data-ad-unit이 비어 있는 칸은 아래 스크립트가 지운다(빈 칸이 안 보이게).
+     AdFit에서 300x250 광고단위를 만들고 ID를 빈 칸에 넣으면 그 칸이 바로 나온다. -->
+<div class="ad-grid" id="ad-bottom">
+  <div class="ad-box ad-300"><!-- 1번 -->
+    <ins class="kakao_ad_area" style="display:none;"
+         data-ad-unit="DAN-WgyoKayL9YMaJHN7"
+         data-ad-width="300"
+         data-ad-height="250"></ins>
+  </div>
+  <div class="ad-box ad-300"><!-- 2번 -->
+    <ins class="kakao_ad_area" style="display:none;"
+         data-ad-unit="DAN-Po4R6OMEsitzeheT"
+         data-ad-width="300"
+         data-ad-height="250"></ins>
+  </div>
+  <div class="ad-box ad-300"><!-- 3번 -->
+    <ins class="kakao_ad_area" style="display:none;"
+         data-ad-unit="DAN-anpjniSxkPnBnUkg"
+         data-ad-width="300"
+         data-ad-height="250"></ins>
+  </div>
+  <div class="ad-box ad-300"><!-- 4번 -->
+    <ins class="kakao_ad_area" style="display:none;"
+         data-ad-unit="DAN-9wtGgyb4EyGaNTax"
+         data-ad-width="300"
+         data-ad-height="250"></ins>
+  </div>
+  <div class="ad-box ad-300"><!-- 5번 -->
+    <ins class="kakao_ad_area" style="display:none;"
+         data-ad-unit=""
+         data-ad-width="300"
+         data-ad-height="250"></ins>
+  </div>
+  <div class="ad-box ad-300"><!-- 6번 -->
+    <ins class="kakao_ad_area" style="display:none;"
+         data-ad-unit=""
+         data-ad-width="300"
+         data-ad-height="250"></ins>
+  </div>
+  <div class="ad-box ad-300"><!-- 7번 -->
+    <ins class="kakao_ad_area" style="display:none;"
+         data-ad-unit=""
+         data-ad-width="300"
+         data-ad-height="250"></ins>
+  </div>
+  <div class="ad-box ad-300"><!-- 8번 -->
+    <ins class="kakao_ad_area" style="display:none;"
+         data-ad-unit=""
+         data-ad-width="300"
+         data-ad-height="250"></ins>
+  </div>
+  <div class="ad-box ad-300"><!-- 9번 -->
+    <ins class="kakao_ad_area" style="display:none;"
+         data-ad-unit=""
+         data-ad-width="300"
+         data-ad-height="250"></ins>
+  </div>
+  <div class="ad-box ad-300"><!-- 10번 -->
+    <ins class="kakao_ad_area" style="display:none;"
+         data-ad-unit=""
+         data-ad-width="300"
+         data-ad-height="250"></ins>
+  </div>
+  <div class="ad-box ad-300"><!-- 11번 -->
+    <ins class="kakao_ad_area" style="display:none;"
+         data-ad-unit=""
+         data-ad-width="300"
+         data-ad-height="250"></ins>
+  </div>
+  <div class="ad-box ad-300"><!-- 12번 -->
+    <ins class="kakao_ad_area" style="display:none;"
+         data-ad-unit=""
+         data-ad-width="300"
+         data-ad-height="250"></ins>
+  </div>
+  <div class="ad-box ad-300"><!-- 13번 -->
+    <ins class="kakao_ad_area" style="display:none;"
+         data-ad-unit=""
+         data-ad-width="300"
+         data-ad-height="250"></ins>
+  </div>
+  <div class="ad-box ad-300"><!-- 14번 -->
+    <ins class="kakao_ad_area" style="display:none;"
+         data-ad-unit=""
+         data-ad-width="300"
+         data-ad-height="250"></ins>
+  </div>
+  <div class="ad-box ad-300"><!-- 15번 -->
+    <ins class="kakao_ad_area" style="display:none;"
+         data-ad-unit=""
+         data-ad-width="300"
+         data-ad-height="250"></ins>
+  </div>
+</div>
+<div class="ad-slot" id="ad-side-inline"></div>
+<script>
+  // 6개 광고가 모두 나오도록: 좌우 여백이 좁은 화면에서는 160x600 두 개를 지우지 않고 아래 광고 줄로 옮긴다
+  document.querySelectorAll('#ad-bottom .kakao_ad_area').forEach(function(ad){
+    if(!ad.getAttribute('data-ad-unit')) ad.parentNode.remove();
+  });
+  (function(){
+    if(!matchMedia('(min-width:1660px) and (min-height:680px)').matches){
+      var box=document.getElementById('ad-side-inline');
+      document.querySelectorAll('.ad-rail').forEach(function(rail){
+        var ad=rail.querySelector('.kakao_ad_area');
+        if(ad){ var cell=document.createElement('div'); cell.className='ad-box'; cell.style.width='160px'; cell.appendChild(ad); box.appendChild(cell); }
+        rail.remove();
+      });
+    } else {
+      document.getElementById('ad-side-inline').remove();
+    }
+  })();
+</script>
+<script src="https://t1.kakaocdn.net/kas/static/ba.min.js" async></script>
 
 <footer><div class="wrap">
   <div class="fgrid">
@@ -697,13 +840,14 @@ async function runExpandAI(){
   catch(err){ d={error_note:err.message}; }
   exAIGo.disabled=false; exAIGo.textContent="AI로 다시 고르기";
   if(d.error_note){ exAIOut.innerHTML=`<p style="color:#fbbf24;margin-top:12px">⚠️ ${esc(d.error_note)}</p>`; return; }
+  if(d.docs_filled&&Object.keys(d.docs_filled).length){ Object.assign(exDocs,d.docs_filled); renderExpand(); }  // AI에게 보내며 채운 블로그 글 수를 표에도
   const x=d.result, sent=new Set(send.map(r=>norm(r.keyword)));
   exAIOut.innerHTML=`<div class="ai-out" style="margin-top:16px">
     <div class="ai-verdict"><span class="lv lv-good">AI 요약</span><div>${esc(x.summary)}</div></div>
     <div style="margin-bottom:12px">${checkBox(d.check)}</div>
     <div class="ai-box" style="margin-bottom:12px"><h5>🏆 추천 키워드 (순위)</h5>
       <div style="overflow-x:auto"><table style="min-width:620px"><tr><td>#</td><td>키워드</td><td>근거 (KEYWAVE 데이터)</td><td>이유 · 제목 아이디어</td></tr>
-      ${[...x.picks].sort((a,b)=>a.rank-b.rank).map(p=>`<tr><td>${p.rank}</td><td><a href="#" data-w="${esc(p.keyword)}" style="color:var(--text);border-bottom:1px dashed var(--muted)">${esc(p.keyword)}</a>${sent.has(norm(p.keyword))?"":` <small style="color:#fbbf24">(보낸 목록에 없음)</small>`}</td><td class="ev">${esc(p.evidence)}${warnNums(p.unverified)}</td><td>${esc(p.why)}<br><small style="color:var(--muted)">✏️ ${esc(p.title_idea)}</small></td></tr>`).join("")}</table></div></div>
+      ${[...x.picks].sort((a,b)=>a.rank-b.rank).map(p=>`<tr><td>${p.rank}</td><td><a href="#" data-w="${esc(p.keyword)}" style="color:var(--text);border-bottom:1px dashed var(--muted)">${esc(p.keyword)}</a>${sent.has(norm(p.keyword))?"":` <small style="color:#fbbf24">(보낸 목록에 없음)</small>`}</td><td class="ev">${esc(p.evidence)}${warnNums(p.unverified)}${warnNoDocs(p.no_docs_claim)}</td><td>${esc(p.why)}<br><small style="color:var(--muted)">✏️ ${esc(p.title_idea)}</small></td></tr>`).join("")}</table></div></div>
     <div class="ai-grid">
       <div class="ai-box"><h5>🧩 검색 의도별 묶음</h5>${x.groups.map(g=>`<p style="font-size:13px;margin-bottom:6px"><b>${esc(g.name)}</b> <small style="color:var(--muted)">${esc(g.intent)}</small></p><div class="chips" style="justify-content:flex-start;margin-bottom:10px">${g.keywords.map(w=>`<button class="chip" data-w="${esc(w)}">${esc(w)}</button>`).join("")}</div>`).join("")}</div>
       <div class="ai-box"><h5>🚫 피하면 좋은 키워드</h5>${x.avoid.length?`<table>${x.avoid.map(a=>`<tr><td>${esc(a.keyword)}</td><td>${esc(a.why)}</td></tr>`).join("")}</table>`:`<p style="font-size:13px;color:var(--muted)">없어요</p>`}</div>
@@ -863,6 +1007,7 @@ async function bindAI(k){
 
 // 서버가 AI 답을 KEYWAVE 데이터와 대조한 결과(check)를 보여줍니다
 const warnNums=list=>list?.length?`<br><small style="color:#fbbf24">⚠️ 데이터에 없는 숫자: ${list.map(esc).join(", ")}</small>`:"";
+const warnNoDocs=list=>list?.length?`<br><small style="color:#fbbf24">⚠️ 블로그 글 수를 모르는데 경쟁을 판단했어요 — 믿지 마세요</small>`:"";
 function checkBox(c){
   if(!c) return "";
   if(c.ok) return `<div class="ai-box" style="grid-column:1/-1;border:1px solid #22c55e55"><h5>🔎 자동 검증: 통과</h5><p style="font-size:13px;color:var(--muted)">AI 답의 숫자와 키워드를 KEYWAVE가 받은 데이터와 하나하나 대조했어요. 데이터에 없는 값은 없었어요.</p></div>`;
@@ -879,7 +1024,7 @@ function renderAI(out,d){
       ${checkBox(d.check)}
       <div class="ai-box"><h5>📏 판단 근거 (KEYWAVE 데이터)</h5><table>${x.signals.map(sg=>`<tr><td>${esc(sg.name)}</td><td><span class="ev">${esc(sg.evidence)}</span><br>${esc(sg.meaning)}${warnNums(sg.unverified)}</td></tr>`).join("")}</table></div>
       <div class="ai-box"><h5>🧩 주제 묶음</h5>${x.clusters.map(c=>`<p style="font-size:13px;margin-bottom:6px"><b>${esc(c.name)}</b></p><div class="chips" style="justify-content:flex-start;margin-bottom:10px">${c.keywords.map(w=>`<button class="chip" data-w="${esc(w)}">${esc(w)}</button>`).join("")}</div>`).join("")}</div>
-      <div class="ai-topics">${x.topics.map(t=>`<div class="ai-topic"><b>${esc(t.title)}</b>🎯 ${esc(t.target_keyword)}${t.keyword_ok===false?` <small style="color:#fbbf24">(데이터에 없는 키워드)</small>`:""}<br>${esc(t.why)}${warnNums(t.unverified)}</div>`).join("")}</div>
+      <div class="ai-topics">${x.topics.map(t=>`<div class="ai-topic"><b>${esc(t.title)}</b>🎯 ${esc(t.target_keyword)}${t.keyword_ok===false?` <small style="color:#fbbf24">(데이터에 없는 키워드)</small>`:""}<br>${esc(t.why)}${warnNums(t.unverified)}${warnNoDocs(t.no_docs_claim)}</div>`).join("")}</div>
       <div class="ai-box" style="grid-column:1/-1"><h5>📝 추천 글 구성 — ${esc(x.outline.title)}</h5>
         <p style="font-size:13px;color:var(--muted);margin-bottom:8px">대상 독자: ${esc(x.outline.reader)}</p>
         <ol>${x.outline.sections.map(s=>`<li>${esc(s)}</li>`).join("")}</ol>

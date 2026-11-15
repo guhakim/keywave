@@ -887,6 +887,11 @@ class Handler(SimpleHTTPRequestHandler):
             return False
         return True
 
+    def send_header(self, keyword, value):
+        # 고정된 파일 시각을 알려주면 Vercel이 그 값을 보고 304로 답한다. 시각 자체를 보내지 않는다
+        if keyword.lower() != "last-modified":
+            super().send_header(keyword, value)
+
     def do_HEAD(self):
         if self.guard():
             super().do_HEAD()
@@ -961,6 +966,9 @@ class Handler(SimpleHTTPRequestHandler):
         if not api:
             if any(part.startswith(".") for part in url.path.split("/")) or url.path.endswith(".py"):
                 return self.send_error(404)
+            # Vercel은 배포마다 파일 시각을 같은 값으로 고정한다. 이 조건을 그대로 두면 새로 배포해도
+            # 서버가 "안 바뀜(304)"으로 답해서, 한 번 방문한 사람에게 옛 화면이 계속 나온다
+            del self.headers["If-Modified-Since"]
             return super().do_GET()
         q = urllib.parse.parse_qs(url.query).get("q", [""])[0].strip()
         try:

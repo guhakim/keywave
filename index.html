@@ -272,6 +272,7 @@ footer{border-top:1px solid var(--line);padding:50px 0 30px;color:var(--muted);f
 /* 아래 300x250 광고: 300px 칸을 최대 3개씩 줄 맞춰 가운데 정렬 (3x5=15). 좁은 화면은 2개, 1개로 줄어든다 */
 .ad-grid{display:grid;grid-template-columns:repeat(auto-fill,300px);justify-content:center;gap:24px 32px;max-width:calc(300px*3 + 32px*2 + 32px);margin:0 auto;padding:32px 16px;border-top:1px solid var(--line)}
 .ad-300{width:300px;height:250px}
+.ad-grid-top{border-top:0;padding:28px 0 8px}
 </style>
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3217274047131813"
      crossorigin="anonymous"></script>
@@ -337,6 +338,27 @@ footer{border-top:1px solid var(--line);padding:50px 0 30px;color:var(--muted);f
       <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="exVolOnly"> 검색량 있는 것만</label>
     </div>
   </form>
+  <!-- 키워드 확장 바로 아래 300x250 광고 3개 (한 줄 가운데 정렬) -->
+  <div class="ad-grid ad-grid-top" id="ad-expand">
+    <div class="ad-box ad-300"><!-- 위 1번 -->
+      <ins class="kakao_ad_area" style="display:none;"
+           data-ad-unit="DAN-iVPUtslXYzRy8zFW"
+           data-ad-width="300"
+           data-ad-height="250"></ins>
+    </div>
+    <div class="ad-box ad-300"><!-- 위 2번 -->
+      <ins class="kakao_ad_area" style="display:none;"
+           data-ad-unit="DAN-un0bsTM41YNhuVsI"
+           data-ad-width="300"
+           data-ad-height="250"></ins>
+    </div>
+    <div class="ad-box ad-300"><!-- 위 3번 -->
+      <ins class="kakao_ad_area" style="display:none;"
+           data-ad-unit="DAN-p2GemmHkKr2Z6wym"
+           data-ad-width="300"
+           data-ad-height="250"></ins>
+    </div>
+  </div>
   <div id="exOut"></div>
   <div class="ai" id="exAI" style="display:none">
     <h4>🤖 AI로 키워드 고르기</h4>
@@ -377,7 +399,7 @@ footer{border-top:1px solid var(--line);padding:50px 0 30px;color:var(--muted);f
        data-ad-width="160"
        data-ad-height="600"></ins>
 </div>
-<!-- 아래 300x250 광고 15칸: 3개씩 5줄로 가운데 정렬.
+<!-- 아래 300x250 광고 12칸: 3개씩 4줄로 가운데 정렬.
      AdFit은 광고마다 다른 광고단위 ID가 필요하다. data-ad-unit이 비어 있는 칸은 아래 스크립트가 지운다(빈 칸이 안 보이게).
      AdFit에서 300x250 광고단위를 만들고 ID를 빈 칸에 넣으면 그 칸이 바로 나온다. -->
 <div class="ad-grid" id="ad-bottom">
@@ -453,29 +475,11 @@ footer{border-top:1px solid var(--line);padding:50px 0 30px;color:var(--muted);f
          data-ad-width="300"
          data-ad-height="250"></ins>
   </div>
-  <div class="ad-box ad-300"><!-- 13번 -->
-    <ins class="kakao_ad_area" style="display:none;"
-         data-ad-unit="DAN-iVPUtslXYzRy8zFW"
-         data-ad-width="300"
-         data-ad-height="250"></ins>
-  </div>
-  <div class="ad-box ad-300"><!-- 14번 -->
-    <ins class="kakao_ad_area" style="display:none;"
-         data-ad-unit="DAN-un0bsTM41YNhuVsI"
-         data-ad-width="300"
-         data-ad-height="250"></ins>
-  </div>
-  <div class="ad-box ad-300"><!-- 15번 -->
-    <ins class="kakao_ad_area" style="display:none;"
-         data-ad-unit="DAN-p2GemmHkKr2Z6wym"
-         data-ad-width="300"
-         data-ad-height="250"></ins>
-  </div>
 </div>
 <div class="ad-slot" id="ad-side-inline"></div>
 <script>
   // 6개 광고가 모두 나오도록: 좌우 여백이 좁은 화면에서는 160x600 두 개를 지우지 않고 아래 광고 줄로 옮긴다
-  document.querySelectorAll('#ad-bottom .kakao_ad_area').forEach(function(ad){
+  document.querySelectorAll('#ad-bottom .kakao_ad_area, #ad-expand .kakao_ad_area').forEach(function(ad){
     if(!ad.getAttribute('data-ad-unit')) ad.parentNode.remove();
   });
   (function(){
